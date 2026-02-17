@@ -4,7 +4,7 @@ import './App.css';
 import CharacterCreator from './CharacterCreator';
 import Dashboard from './Dashboard';
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://www.bunny-crush.com";
 
 function App() {
   const [messages, setMessages] = useState([]);
