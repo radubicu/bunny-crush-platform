@@ -6,7 +6,6 @@ __pycache__/
 .Python
 *.db
 *.sqlite3
-generated_images/
-models_cache/
 .env
+generated_images/
 *.log

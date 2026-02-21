@@ -1,359 +1,300 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getMe, listCharacters, getPackages, createCheckout, getTransactions, deleteCharacter } from './api';
+import './Dashboard.css';
 
-const API_URL = "http://127.0.0.1:8000";
+// Level thresholds (in USD / euro spent via credits)
+// 1 credit ≈ €0.01 roughly, but levels use total_spent (credits count)
+// Backend: total_spent is in CREDITS spent. We display levels in €.
+// Level 1: 0-500 credits spent  (~€0-50)
+// Level 2: 500-1500             (~€50-150)
+// Level 3: 1500-3000            (~€150-300)
+// Level 4: 3000-5000            (~€300-500)
+// Level 5: 5000+                (~€500+)
+const LEVELS = [
+  { num: 1, name: 'Starter',   color: '#8b8b9e', min: 0,    max: 500,  desc: '€0 – €50' },
+  { num: 2, name: 'Regular',   color: '#4ade80', min: 500,  max: 1500, desc: '€50 – €150' },
+  { num: 3, name: 'Premium',   color: '#60a5fa', min: 1500, max: 3000, desc: '€150 – €300' },
+  { num: 4, name: 'Elite',     color: '#a78bfa', min: 3000, max: 5000, desc: '€300 – €500' },
+  { num: 5, name: 'VIP',       color: '#ff6bbd', min: 5000, max: null, desc: '€500+' },
+];
 
-function Dashboard({ onClose, userLevel, totalSpent }) {
-  const [user, setUser] = useState(null);
-  const [conversations, setConversations] = useState([]);
+const PACKAGES = [
+  { id: 'starter',    name: 'Starter',    credits: 100,  bonus: 0,    price: '€9.99' },
+  { id: 'basic',      name: 'Basic',      credits: 250,  bonus: 10,   price: '€19.99' },
+  { id: 'popular',    name: 'Popular',    credits: 600,  bonus: 60,   price: '€39.99',  badge: 'Most popular' },
+  { id: 'pro',        name: 'Pro',        credits: 1500, bonus: 300,  price: '€89.99' },
+  { id: 'vip',        name: 'VIP',        credits: 4000, bonus: 1200, price: '€199.99', badge: 'Best value' },
+];
+
+function getCurrentLevel(totalSpent) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (totalSpent >= LEVELS[i].min) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
+function getNextLevel(totalSpent) {
+  const lvl = getCurrentLevel(totalSpent);
+  return LEVELS.find(l => l.num === lvl.num + 1) || null;
+}
+
+function getLevelProgress(totalSpent) {
+  const cur = getCurrentLevel(totalSpent);
+  if (!cur.max) return 100;
+  return Math.min(100, ((totalSpent - cur.min) / (cur.max - cur.min)) * 100);
+}
+
+function Dashboard({ user: initialUser, onClose, onStartChat, onNewCharacter, onCreditsUpdate, onLogout }) {
+  const [user, setUser] = useState(initialUser);
+  const [tab, setTab] = useState('overview');
+  const [characters, setCharacters] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingCheckout, setLoadingCheckout] = useState(null);
 
   useEffect(() => {
-    fetchUserData();
+    getMe().then(r => { setUser(r.data); onCreditsUpdate(r.data.credits); }).catch(() => {});
+    listCharacters().then(r => setCharacters(r.data)).catch(() => {});
   }, []);
 
-  const fetchUserData = async () => {
-    const token = localStorage.getItem('token');
+  useEffect(() => {
+    if (tab === 'transactions') {
+      getTransactions().then(r => setTransactions(r.data)).catch(() => {});
+    }
+  }, [tab]);
+
+  const handleBuy = async (pkgId) => {
+    setLoadingCheckout(pkgId);
     try {
-      const response = await axios.get(`${API_URL}/user/me`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error fetching user:', error);
+      const origin = window.location.origin;
+      const res = await createCheckout(
+        pkgId,
+        `${origin}/?payment=success`,
+        `${origin}/?payment=cancelled`
+      );
+      window.location.href = res.data.checkout_url;
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Could not start checkout. Make sure Stripe is configured.');
+    } finally {
+      setLoadingCheckout(null);
     }
   };
 
-  const getLevelInfo = () => {
-    const levels = [
-      { 
-        name: "Free User", 
-        color: "#999", 
-        icon: "🆓",
-        next: "$10",
-        maxNSFW: 0,
-        description: "SFW content only"
-      },
-      { 
-        name: "Starter", 
-        color: "#4CAF50", 
-        icon: "⭐",
-        next: "$25",
-        maxNSFW: 1,
-        description: "Flirty content unlocked"
-      },
-      { 
-        name: "Regular", 
-        color: "#2196F3", 
-        icon: "💎",
-        next: "$50",
-        maxNSFW: 2,
-        description: "Lingerie content unlocked"
-      },
-      { 
-        name: "Premium", 
-        color: "#9C27B0", 
-        icon: "👑",
-        next: "$100",
-        maxNSFW: 3,
-        description: "Nude content unlocked"
-      },
-      { 
-        name: "VIP", 
-        color: "#FF6BC9", 
-        icon: "🔥",
-        next: "MAX",
-        maxNSFW: 4,
-        description: "Full explicit access"
-      }
-    ];
-    
-    return levels[userLevel];
+  const handleDeleteChar = async (id, name) => {
+    if (!window.confirm(`Delete ${name}? This cannot be undone.`)) return;
+    try {
+      await deleteCharacter(id);
+      setCharacters(prev => prev.filter(c => c.id !== id));
+    } catch {
+      alert('Failed to delete character.');
+    }
   };
 
-  const getProgressToNextLevel = () => {
-    const thresholds = [0, 10, 25, 50, 100];
-    if (userLevel >= 4) return 100;
-    
-    const current = totalSpent;
-    const nextThreshold = thresholds[userLevel + 1];
-    const prevThreshold = thresholds[userLevel];
-    
-    const progress = ((current - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
-    return Math.min(Math.max(progress, 0), 100);
-  };
+  const currentLevel = getCurrentLevel(user?.total_spent || 0);
+  const nextLevel = getNextLevel(user?.total_spent || 0);
+  const progress = getLevelProgress(user?.total_spent || 0);
 
-  const handleBuyCredits = async (packageId) => {
-    alert(`Stripe payment for ${packageId} - Coming soon!`);
-  };
-
-  const levelInfo = getLevelInfo();
-  const progress = getProgressToNextLevel();
+  const tabs = [
+    { id: 'overview',      label: 'Overview' },
+    { id: 'companions',    label: 'Companions' },
+    { id: 'credits',       label: 'Credits' },
+    { id: 'transactions',  label: 'History' },
+  ];
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,     
-      bottom: 0,
-      background: 'rgba(10,10,15,0.95)',
-      backdropFilter: 'blur(15px)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'auto'
-    }}>
-      <div style={{
-        background: 'rgba(20,20,28,0.95)',
-        borderRadius: '28px',
-        padding: '45px',
-        maxWidth: '900px',
-        width: '90%',
-        maxHeight: '90vh',
-        overflow: 'auto',
-        position: 'relative'
-      }}>
-        <button onClick={onClose} style={{
-          position: 'absolute',
-          top: '25px',
-          right: '25px',
-          background: 'rgba(196,95,255,0.2)',
-          border: 'none',
-          color: 'white',
-          width: '44px',
-          height: '44px',
-          borderRadius: '50%',
-          cursor: 'pointer',
-          fontSize: '20px'
-        }}>✕</button>
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal modal-lg">
+        <button className="modal-close" onClick={onClose}>&#x2715;</button>
+        <h2 className="modal-title" style={{ textAlign: 'left', marginBottom: '0', fontSize: '1.6rem' }}>
+          Account
+        </h2>
+        <p className="dash-email">{user?.username || user?.email}</p>
 
-        <h2 style={{
-          background: 'linear-gradient(135deg, #c45fff 0%, #ff6bc9 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          marginBottom: '30px',
-          fontSize: '32px'
-        }}>Dashboard</h2>
+        {/* Tabs */}
+        <div className="dash-tabs">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              className={`dash-tab ${tab === t.id ? 'active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        {user && (
-          <div>
-            {/* User Level Card */}
-            <div style={{
-              background: `linear-gradient(135deg, ${levelInfo.color}20, ${levelInfo.color}10)`,
-              border: `2px solid ${levelInfo.color}`,
-              padding: '30px',
-              borderRadius: '20px',
-              marginBottom: '24px',
-              position: 'relative',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '20px'
-              }}>
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '8px'
-                  }}>
-                    <span style={{fontSize: '48px'}}>{levelInfo.icon}</span>
-                    <div>
-                      <h3 style={{
-                        color: levelInfo.color,
-                        fontSize: '28px',
-                        margin: 0
-                      }}>{levelInfo.name}</h3>
-                      <p style={{
-                        color: 'rgba(255,255,255,0.6)',
-                        fontSize: '14px',
-                        margin: '4px 0 0 0'
-                      }}>
-                        {levelInfo.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div style={{textAlign: 'right'}}>
-                  <p style={{
-                    color: 'rgba(255,255,255,0.6)',
-                    fontSize: '14px',
-                    margin: '0 0 4px 0'
-                  }}>Total Spent</p>
-                  <p style={{
-                    color: levelInfo.color,
-                    fontSize: '32px',
-                    fontWeight: 'bold',
-                    margin: 0
-                  }}>${totalSpent.toFixed(2)}</p>
-                </div>
+        {/* ── OVERVIEW ─────────────────────────────────── */}
+        {tab === 'overview' && (
+          <div className="dash-section">
+            {/* Stats row */}
+            <div className="stats-row">
+              <div className="stat-card">
+                <div className="stat-label">Credits</div>
+                <div className="stat-value" style={{ color: 'var(--primary)' }}>{user?.credits ?? '—'}</div>
               </div>
-
-              {userLevel < 4 && (
-                <div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '8px'
-                  }}>
-                    <span style={{color: 'rgba(255,255,255,0.6)', fontSize: '14px'}}>
-                      Progress to next level
-                    </span>
-                    <span style={{color: levelInfo.color, fontSize: '14px', fontWeight: 'bold'}}>
-                      {levelInfo.next} needed
-                    </span>
-                  </div>
-                  <div style={{
-                    width: '100%',
-                    height: '12px',
-                    background: 'rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: `${progress}%`,
-                      height: '100%',
-                      background: `linear-gradient(90deg, ${levelInfo.color}, ${levelInfo.color}dd)`,
-                      transition: 'width 0.3s ease'
-                    }} />
-                  </div>
-                </div>
-              )}
-
-              {userLevel === 4 && (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '16px',
-                  background: 'rgba(255,107,201,0.2)',
-                  borderRadius: '12px',
-                  marginTop: '16px'
-                }}>
-                  <p style={{
-                    color: '#FF6BC9',
-                    fontSize: '18px',
-                    fontWeight: 'bold',
-                    margin: 0
-                  }}>
-                    🎉 You've reached MAX level! Full access unlocked!
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Account Info */}
-            <div style={{
-              background: 'rgba(30,30,40,0.6)',
-              padding: '24px',
-              borderRadius: '16px',
-              marginBottom: '24px',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
-              <h3 style={{color: '#c45fff', marginBottom: '16px', fontSize: '20px'}}>Account Info</h3>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '16px'
-              }}>
-                <div>
-                  <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '4px'}}>Email</p>
-                  <p style={{color: 'white', fontSize: '16px', margin: 0}}>{user.email}</p>
-                </div>
-                <div>
-                  <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '4px'}}>Credits</p>
-                  <p style={{color: '#c45fff', fontSize: '20px', fontWeight: 'bold', margin: 0}}>
-                    💎 {user.credits}
-                  </p>
-                </div>
-                <div>
-                  <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '4px'}}>Max NSFW Level</p>
-                  <p style={{color: levelInfo.color, fontSize: '16px', fontWeight: 'bold', margin: 0}}>
-                    Level {levelInfo.maxNSFW}
-                  </p>
-                </div>
-                <div>
-                  <p style={{color: 'rgba(255,255,255,0.6)', fontSize: '14px', marginBottom: '4px'}}>Member Since</p>
-                  <p style={{color: 'white', fontSize: '16px', margin: 0}}>
-                    {new Date(user.created_at).toLocaleDateString()}
-                  </p>
-                </div>
+              <div className="stat-card">
+                <div className="stat-label">Level</div>
+                <div className="stat-value" style={{ color: currentLevel.color }}>{currentLevel.name}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Companions</div>
+                <div className="stat-value">{characters.length}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-label">Credits spent</div>
+                <div className="stat-value">{user?.total_spent ?? 0}</div>
               </div>
             </div>
 
-            {/* Buy Credits */}
-            <div style={{
-              background: 'rgba(30,30,40,0.6)',
-              padding: '24px',
-              borderRadius: '16px',
-              border: '1px solid rgba(255,255,255,0.05)'
-            }}>
-              <h3 style={{color: '#c45fff', marginBottom: '16px', fontSize: '20px'}}>Buy Credits</h3>
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px'}}>
-                {[
-                  {id: 'starter', credits: 50, price: 4.99, bonus: 0},
-                  {id: 'popular', credits: 150, price: 9.99, bonus: 25},
-                  {id: 'best', credits: 500, price: 24.99, bonus: 150},
-                  {id: 'premium', credits: 1000, price: 39.99, bonus: 400}
-                ].map(pkg => (
-                  <div key={pkg.id} style={{
-                    background: 'rgba(196,95,255,0.1)',
-                    border: '1px solid rgba(196,95,255,0.3)',
-                    borderRadius: '12px',
-                    padding: '20px',
-                    textAlign: 'center',
-                    transition: 'all 0.3s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.borderColor = '#c45fff';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = 'rgba(196,95,255,0.3)';
-                  }}>
-                    <h4 style={{color: '#c45fff', marginBottom: '8px', fontSize: '18px'}}>
-                      {pkg.credits + pkg.bonus} Credits
-                    </h4>
-                    {pkg.bonus > 0 && (
-                      <span style={{
-                        background: '#c45fff',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        marginBottom: '8px',
-                        display: 'inline-block',
-                        fontWeight: 'bold'
-                      }}>
-                        +{pkg.bonus} BONUS!
-                      </span>
-                    )}
-                    <p style={{fontSize: '28px', fontWeight: 'bold', margin: '12px 0', color: 'white'}}>
-                      ${pkg.price}
-                    </p>
-                    <button onClick={() => handleBuyCredits(pkg.id)} style={{
-                      width: '100%',
-                      padding: '12px',
-                      background: 'linear-gradient(135deg, #c45fff 0%, #ff6bc9 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600',
-                      fontSize: '15px',
-                      transition: 'all 0.3s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
-                      Buy Now
-                    </button>
+            {/* Level card */}
+            <div className="level-card" style={{ borderColor: currentLevel.color + '60' }}>
+              <div className="level-header">
+                <div>
+                  <div className="level-badge" style={{ background: currentLevel.color + '25', color: currentLevel.color, borderColor: currentLevel.color + '50' }}>
+                    Level {currentLevel.num} — {currentLevel.name}
+                  </div>
+                  <div className="level-range">{currentLevel.desc}</div>
+                </div>
+                {nextLevel && (
+                  <div className="level-next">
+                    <span>Next: </span>
+                    <span style={{ color: nextLevel.color }}>{nextLevel.name}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="level-bar-wrap">
+                <div className="level-bar">
+                  <div
+                    className="level-bar-fill"
+                    style={{ width: `${progress}%`, background: currentLevel.color }}
+                  />
+                </div>
+                {nextLevel && (
+                  <div className="level-bar-labels">
+                    <span>{user?.total_spent || 0} cr spent</span>
+                    <span>{nextLevel.min} cr needed</span>
+                  </div>
+                )}
+                {!nextLevel && (
+                  <div className="level-max-msg" style={{ color: currentLevel.color }}>
+                    Maximum level reached
+                  </div>
+                )}
+              </div>
+
+              <div className="all-levels">
+                {LEVELS.map(l => (
+                  <div key={l.num} className={`level-pip ${currentLevel.num >= l.num ? 'reached' : ''}`} style={{ '--lcolor': l.color }}>
+                    <div className="pip-dot" style={{ background: currentLevel.num >= l.num ? l.color : 'var(--border)' }} />
+                    <span>{l.name}</span>
                   </div>
                 ))}
               </div>
             </div>
+
+            <div className="dash-actions-row">
+              <button className="btn-primary" onClick={() => setTab('credits')}>Buy credits</button>
+              <button className="btn-ghost" onClick={onNewCharacter}>New companion</button>
+              <button className="btn-danger" onClick={onLogout}>Sign out</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── COMPANIONS ───────────────────────────────── */}
+        {tab === 'companions' && (
+          <div className="dash-section">
+            {characters.length === 0 ? (
+              <div className="dash-empty">
+                <p>No companions yet</p>
+                <button className="btn-primary" onClick={onNewCharacter}>Create one</button>
+              </div>
+            ) : (
+              <div className="companions-list">
+                {characters.map(char => (
+                  <div key={char.id} className="companion-row">
+                    <div className="companion-avatar">
+                      {char.avatar_url
+                        ? <img src={char.avatar_url} alt={char.name} />
+                        : <div className="avatar-placeholder">{char.name.charAt(0)}</div>
+                      }
+                    </div>
+                    <div className="companion-info">
+                      <div className="companion-name">{char.name}</div>
+                      <div className="companion-meta">{char.age} yrs — {char.total_images_generated} photos generated</div>
+                    </div>
+                    <div className="companion-actions">
+                      <button className="btn-primary btn-sm" onClick={() => { onStartChat(char); onClose(); }}>
+                        Chat
+                      </button>
+                      <button className="btn-danger btn-sm" onClick={() => handleDeleteChar(char.id, char.name)}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: '20px' }}>
+              <button className="btn-ghost" onClick={onNewCharacter}>+ New companion</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── CREDITS ──────────────────────────────────── */}
+        {tab === 'credits' && (
+          <div className="dash-section">
+            <div className="credits-current">
+              <div className="credits-big">{user?.credits}</div>
+              <div className="credits-sub">credits available</div>
+              <div className="credits-hint">Chat: 1 cr &nbsp;/&nbsp; Photo: 7 cr &nbsp;/&nbsp; NSFW photo: 15 cr</div>
+            </div>
+
+            <div className="packages-grid">
+              {PACKAGES.map(pkg => (
+                <div key={pkg.id} className={`package-card ${pkg.badge ? 'featured' : ''}`}>
+                  {pkg.badge && <div className="package-badge">{pkg.badge}</div>}
+                  <div className="package-name">{pkg.name}</div>
+                  <div className="package-credits">{pkg.credits + pkg.bonus}</div>
+                  <div className="package-credits-label">
+                    credits
+                    {pkg.bonus > 0 && <span className="package-bonus">+{pkg.bonus} bonus</span>}
+                  </div>
+                  <div className="package-price">{pkg.price}</div>
+                  <button
+                    className={`btn-primary ${pkg.badge ? '' : 'btn-ghost-alt'}`}
+                    onClick={() => handleBuy(pkg.id)}
+                    disabled={loadingCheckout === pkg.id}
+                    style={{ width: '100%', marginTop: '14px', borderRadius: '10px' }}
+                  >
+                    {loadingCheckout === pkg.id ? 'Redirecting...' : 'Buy'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── TRANSACTIONS ─────────────────────────────── */}
+        {tab === 'transactions' && (
+          <div className="dash-section">
+            {transactions.length === 0 ? (
+              <div className="dash-empty"><p>No transactions yet</p></div>
+            ) : (
+              <div className="tx-list">
+                {transactions.map(tx => (
+                  <div key={tx.id} className="tx-row">
+                    <div className={`tx-dot ${tx.amount > 0 ? 'positive' : 'negative'}`} />
+                    <div className="tx-info">
+                      <div className="tx-desc">{tx.description}</div>
+                      <div className="tx-date">{new Date(tx.created_at).toLocaleDateString()} {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <div className={`tx-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
+                      {tx.amount > 0 ? '+' : ''}{tx.amount} cr
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
