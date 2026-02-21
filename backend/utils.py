@@ -21,10 +21,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # nsfw_level: 0 = Safe, 1 = Suggestive, 2 = Explicit
 CREDIT_COSTS = {
     "text_message": 1,    # 1 credit / mesaj text
-    "image_0": 5,         # 5 credite / poza safe
+    "image_0": 7,         # 7 credite / poza safe (am actualizat cu pretul dorit de tine)
     "image_1": 10,        # 10 credite / poza sugestiva
-    "image_2": 20,        # 20 credite / poza explicita (NSFW full)
+    "image_2": 15,        # 15 credite / poza explicita (NSFW full)
 }
+
+COST_TEXT_MESSAGE = 1
+COST_IMAGE_SAFE = 7
+COST_IMAGE_NSFW = 15
 
 # ── Parole ────────────────────────────────────────────────────────────────────
 def get_password_hash(password: str) -> str:
@@ -98,7 +102,7 @@ def deduct_credits(
     if user.credits < amount:
         raise HTTPException(
             status_code=402,
-            detail=f"Credite insuficiente. Ai nevoie de {amount}, ai {user.credits}."
+            detail=f"Insufficient credits. You need {amount}, and you have {user.credits}."
         )
 
     user.credits -= amount

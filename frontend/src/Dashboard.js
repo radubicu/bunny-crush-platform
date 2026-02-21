@@ -3,27 +3,27 @@ import { getMe, listCharacters, getPackages, createCheckout, getTransactions, de
 import './Dashboard.css';
 
 // Level thresholds (in USD / euro spent via credits)
-// 1 credit ≈ €0.01 roughly, but levels use total_spent (credits count)
-// Backend: total_spent is in CREDITS spent. We display levels in €.
-// Level 1: 0-500 credits spent  (~€0-50)
-// Level 2: 500-1500             (~€50-150)
-// Level 3: 1500-3000            (~€150-300)
-// Level 4: 3000-5000            (~€300-500)
-// Level 5: 5000+                (~€500+)
+// 1 credit ≈ $0.01 roughly, but levels use total_spent (credits count)
+// Backend: total_spent is in CREDITS spent. We display levels in $.
+// Level 1: 0-500 credits spent  (~$0-50)
+// Level 2: 500-1500             (~$50-150)
+// Level 3: 1500-3000            (~$150-300)
+// Level 4: 3000-5000            (~$300-500)
+// Level 5: 5000+                (~$500+)
 const LEVELS = [
-  { num: 1, name: 'Starter',   color: '#8b8b9e', min: 0,    max: 500,  desc: '€0 – €50' },
-  { num: 2, name: 'Regular',   color: '#4ade80', min: 500,  max: 1500, desc: '€50 – €150' },
-  { num: 3, name: 'Premium',   color: '#60a5fa', min: 1500, max: 3000, desc: '€150 – €300' },
-  { num: 4, name: 'Elite',     color: '#a78bfa', min: 3000, max: 5000, desc: '€300 – €500' },
-  { num: 5, name: 'VIP',       color: '#ff6bbd', min: 5000, max: null, desc: '€500+' },
+  { num: 1, name: 'Starter',   color: '#8b8b9e', min: 0,    max: 500,  desc: '$0 – $50' },
+  { num: 2, name: 'Regular',   color: '#4ade80', min: 500,  max: 1500, desc: '$50 – $150' },
+  { num: 3, name: 'Premium',   color: '#60a5fa', min: 1500, max: 3000, desc: '$150 – $300' },
+  { num: 4, name: 'Elite',     color: '#a78bfa', min: 3000, max: 5000, desc: '$300 – $500' },
+  { num: 5, name: 'VIP',       color: '#ff6bbd', min: 5000, max: null, desc: '$500+' },
 ];
 
 const PACKAGES = [
-  { id: 'starter',    name: 'Starter',    credits: 100,  bonus: 0,    price: '€9.99' },
-  { id: 'basic',      name: 'Basic',      credits: 250,  bonus: 10,   price: '€19.99' },
-  { id: 'popular',    name: 'Popular',    credits: 600,  bonus: 60,   price: '€39.99',  badge: 'Most popular' },
-  { id: 'pro',        name: 'Pro',        credits: 1500, bonus: 300,  price: '€89.99' },
-  { id: 'vip',        name: 'VIP',        credits: 4000, bonus: 1200, price: '€199.99', badge: 'Best value' },
+  { id: 'starter',    name: 'Starter',    credits: 100,  bonus: 0,    price: '$9.99' },
+  { id: 'basic',      name: 'Basic',      credits: 250,  bonus: 10,   price: '$19.99' },
+  { id: 'popular',    name: 'Popular',    credits: 600,  bonus: 60,   price: '$39.99',  badge: 'Most popular' },
+  { id: 'pro',        name: 'Pro',        credits: 1500, bonus: 300,  price: '$89.99' },
+  { id: 'vip',        name: 'VIP',        credits: 4000, bonus: 1200, price: '$199.99', badge: 'Best value' },
 ];
 
 function getCurrentLevel(totalSpent) {
@@ -136,7 +136,7 @@ function Dashboard({ user: initialUser, onClose, onStartChat, onNewCharacter, on
                 <div className="stat-value" style={{ color: currentLevel.color }}>{currentLevel.name}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-label">Companions</div>
+                <div className="stat-label">Ladies</div>
                 <div className="stat-value">{characters.length}</div>
               </div>
               <div className="stat-card">

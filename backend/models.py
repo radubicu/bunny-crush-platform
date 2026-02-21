@@ -17,7 +17,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
 
-    credits = Column(Integer, default=50)       # 50 credite gratuite la inregistrare
+    credits = Column(Integer, default=10)       # 10 credite gratuite la inregistrare
     total_spent = Column(Integer, default=0)    # total credite cheltuite (pt nivel)
     level = Column(Integer, default=1)          # 1-5, calculat automat
 

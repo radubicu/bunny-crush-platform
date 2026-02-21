@@ -43,7 +43,7 @@ function AuthModal({ onSuccess, onClose }) {
 
         {mode === 'register' && (
           <p style={{ textAlign: 'center', color: 'var(--primary)', fontSize: '13px', marginBottom: '20px', background: 'var(--primary-soft)', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-glow)' }}>
-            50 free credits when you sign up
+            10 free credits when you sign up
           </p>
         )}
 

@@ -11,11 +11,11 @@ const LEVELS = [
 ];
 
 const PACKAGES = [
-  { id: 'starter',  name: 'Starter',  credits: 100,  bonus: 0,    price: '€9.99' },
-  { id: 'basic',    name: 'Basic',    credits: 250,  bonus: 10,   price: '€19.99' },
-  { id: 'popular',  name: 'Popular',  credits: 600,  bonus: 60,   price: '€39.99', badge: 'Most popular' },
-  { id: 'pro',      name: 'Pro',      credits: 1500, bonus: 300,  price: '€89.99' },
-  { id: 'vip',      name: 'VIP',      credits: 4000, bonus: 1200, price: '€199.99', badge: 'Best value' },
+  { id: 'starter',  name: 'Starter',  credits: 100,  bonus: 0,    price: '$9.99' },
+  { id: 'basic',    name: 'Basic',    credits: 250,  bonus: 10,   price: '$19.99' },
+  { id: 'popular',  name: 'Popular',  credits: 600,  bonus: 60,   price: '$39.99', badge: 'Most popular' },
+  { id: 'pro',      name: 'Pro',      credits: 1500, bonus: 300,  price: '$89.99' },
+  { id: 'vip',      name: 'VIP',      credits: 4000, bonus: 1200, price: '$199.99', badge: 'Best value' },
 ];
 
 function getCurrentLevel(spent) {
@@ -84,7 +84,7 @@ export default function HomePage({ user, onStartChat, onNewCharacter, onLogout, 
   };
 
   const tabs = [
-    { id: 'companions', label: 'My Girls' },
+    { id: 'companions', label: 'My Ladies' },
     { id: 'credits',    label: 'Credits' },
     { id: 'account',    label: 'Account' },
     { id: 'history',    label: 'History' },
@@ -150,7 +150,7 @@ export default function HomePage({ user, onStartChat, onNewCharacter, onLogout, 
         {tab === 'companions' && (
           <div className="hp-section">
             <div className="hp-section-header">
-              <h2 className="hp-section-title">My Girls</h2>
+              <h2 className="hp-section-title">My Ladies</h2>
               <button className="btn-primary btn-sm" onClick={onNewCharacter}>+ New</button>
             </div>
 
