@@ -70,7 +70,7 @@ function App() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="loading-logo"><img src={BUNNY_LOGO} alt="" style={{width:'60px', marginBottom:'12px', display:'block', margin:'0 auto 12px'}} />bunny crush</div>
+        <div className="loading-logo"><img src={BUNNY_LOGO} alt="" style={{width:'60px', marginBottom:'12px', display:'block', margin:'0 auto 12px'}} />Bunny Crush</div>
         <div className="loading-dots">
           <span /><span /><span />
         </div>
@@ -105,7 +105,7 @@ function App() {
           <header className="header">
             <button className="logo" onClick={() => setView('home')}>
             <img src={BUNNY_LOGO} alt="" className="logo-ears" />
-            bunny crush
+            Bunny Crush
           </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>
@@ -129,7 +129,7 @@ function App() {
           <header className="header">
             <button className="logo" onClick={() => setView('home')}>
             <img src={BUNNY_LOGO} alt="" className="logo-ears" />
-            bunny crush
+            Bunny Crush
           </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>
@@ -153,7 +153,7 @@ function App() {
           <header className="header">
             <button className="logo" onClick={() => setView('home')}>
             <img src={BUNNY_LOGO} alt="" className="logo-ears" />
-            bunny crush
+            Bunny Crush
           </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>

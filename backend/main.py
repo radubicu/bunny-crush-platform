@@ -24,7 +24,7 @@ app = FastAPI(title="BunnyCrush API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")],
+    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,11 +37,10 @@ def startup():
     db = database.SessionLocal()
     try:
         packages = [
-            {"id": "starter",    "name": "Starter",  "credits": 100,  "bonus_credits": 0,    "price_usd": 9.99},
-            {"id": "basic",      "name": "Basic",    "credits": 250,  "bonus_credits": 10,   "price_usd": 19.99},
-            {"id": "popular",    "name": "Popular",  "credits": 600,  "bonus_credits": 60,   "price_usd": 39.99},
-            {"id": "pro",        "name": "Pro",      "credits": 1500, "bonus_credits": 300,  "price_usd": 89.99},
-            {"id": "vip",        "name": "VIP",      "credits": 4000, "bonus_credits": 1200, "price_usd": 199.99},
+            {"id": "starter",    "name": "Starter",    "credits": 50,   "bonus_credits": 0,   "price_usd": 4.99},
+            {"id": "popular",    "name": "Popular",    "credits": 150,  "bonus_credits": 25,  "price_usd": 9.99},
+            {"id": "best_value", "name": "Best Value", "credits": 500,  "bonus_credits": 150, "price_usd": 24.99},
+            {"id": "premium",    "name": "Premium",    "credits": 1000, "bonus_credits": 400, "price_usd": 39.99},
         ]
         for p in packages:
             if not db.query(models.CreditPackage).filter_by(id=p["id"]).first():
@@ -108,14 +107,14 @@ def register(body: UserRegister, db: Session = Depends(database.get_db)):
         email=body.email,
         username=body.username,
         hashed_password=utils.get_password_hash(body.password),
-        credits=50,
+        credits=10,
         level=1,
     )
     db.add(user)
     db.flush()
 
     # Bonus signup
-    utils.add_credits(user, 50, "Bonus de bun venit 🎉", db, transaction_type="bonus_signup")
+    utils.add_credits(user, 10, "Welcome bonus", db, transaction_type="bonus_signup")
 
     db.commit()
     db.refresh(user)
@@ -500,7 +499,7 @@ def create_checkout(
             # Price dinamic - nu necesita configurare in Stripe Dashboard
             line_items = [{
                 "price_data": {
-                    "currency": "USD",
+                    "currency": "usd",
                     "unit_amount": int(pkg.price_usd * 100),  # in eurocenti
                     "product_data": {
                         "name": f"BunnyCrush - {pkg.name}",
