@@ -28,6 +28,7 @@ function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     setShowAuth(false);
+    setView('dashboard');
   };
 
   const handleLogout = () => {
