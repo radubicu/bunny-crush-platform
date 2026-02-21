@@ -24,7 +24,7 @@ app = FastAPI(title="BunnyCrush API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -468,7 +468,7 @@ def get_packages(db: Session = Depends(database.get_db)):
             "credits": p.credits,
             "bonus_credits": p.bonus_credits,
             "total_credits": p.credits + p.bonus_credits,
-            "price_eur": p.price_eur,
+            "price_usd": p.price_usd,
             "stripe_price_id": p.stripe_price_id,
         }
         for p in pkgs
@@ -500,8 +500,8 @@ def create_checkout(
             # Price dinamic - nu necesita configurare in Stripe Dashboard
             line_items = [{
                 "price_data": {
-                    "currency": "eur",
-                    "unit_amount": int(pkg.price_eur * 100),  # in eurocenti
+                    "currency": "USD",
+                    "unit_amount": int(pkg.price_usd * 100),  # in eurocenti
                     "product_data": {
                         "name": f"BunnyCrush - {pkg.name}",
                         "description": f"{pkg.credits + pkg.bonus_credits} credite ({pkg.credits} + {pkg.bonus_credits} bonus)",

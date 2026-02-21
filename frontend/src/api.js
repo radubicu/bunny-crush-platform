@@ -18,7 +18,7 @@ export const register = (email, password, username) =>
 export const login = (email, password) =>
   api.post('/auth/login', { email, password });
 
-export const getMe = () => api.get('/me');
+export const getMe = () => api.get('/auth/me');
 
 // Characters
 export const createCharacter = (data) => api.post('/characters', data);
