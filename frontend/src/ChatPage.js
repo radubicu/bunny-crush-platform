@@ -111,13 +111,11 @@ function ChatPage({ character, user, onBack, onCreditsUpdate, onShowAuth }) {
 
         <div className="char-profile">
           <div className="char-profile-avatar">
-            {character.avatar_url ? (
-              <img src={character.avatar_url} alt={character.name} />
-            ) : (
-              <div className="avatar-placeholder">
-                {character.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <AvatarWithFallback
+              url={character.avatar_url}
+              name={character.name}
+              size="lg"
+            />
             <div className="online-dot" />
           </div>
           <h2 className="char-profile-name">{character.name}</h2>
@@ -163,10 +161,7 @@ function ChatPage({ character, user, onBack, onCreditsUpdate, onShowAuth }) {
           </button>
           <div className="topbar-char">
             <div className="topbar-avatar">
-              {character.avatar_url
-                ? <img src={character.avatar_url} alt={character.name} />
-                : <div className="avatar-placeholder sm">{character.name.charAt(0)}</div>
-              }
+              <AvatarWithFallback url={character.avatar_url} name={character.name} size="sm" />
             </div>
             <div>
               <div className="topbar-name">{character.name}</div>
@@ -191,10 +186,7 @@ function ChatPage({ character, user, onBack, onCreditsUpdate, onShowAuth }) {
           ) : messages.length === 0 ? (
             <div className="chat-empty">
               <div className="chat-empty-avatar">
-                {character.avatar_url
-                  ? <img src={character.avatar_url} alt={character.name} />
-                  : <div className="avatar-placeholder lg">{character.name.charAt(0)}</div>
-                }
+                <AvatarWithFallback url={character.avatar_url} name={character.name} size="lg" />
               </div>
               <p className="chat-empty-name">Start a conversation with {character.name}</p>
               <p className="chat-empty-hint">Say hi, ask anything, or request a photo</p>
@@ -208,10 +200,7 @@ function ChatPage({ character, user, onBack, onCreditsUpdate, onShowAuth }) {
           {loading && (
             <div className="message-row ai">
               <div className="msg-avatar sm">
-                {character.avatar_url
-                  ? <img src={character.avatar_url} alt="" />
-                  : <div className="avatar-placeholder sm">{character.name.charAt(0)}</div>
-                }
+                <AvatarWithFallback url={character.avatar_url} name={character.name} size="sm" />
               </div>
               <div className="bubble bubble-ai typing-bubble">
                 <span /><span /><span />
@@ -309,6 +298,26 @@ function ChatPage({ character, user, onBack, onCreditsUpdate, onShowAuth }) {
         </div>
       )}
     </div>
+  );
+}
+
+
+function AvatarWithFallback({ url, name, size = '' }) {
+  const [imgError, setImgError] = React.useState(false);
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  
+  if (url && !imgError) {
+    return (
+      <img
+        src={url}
+        alt={name}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  return (
+    <div className={`avatar-placeholder ${size}`}>{initial}</div>
   );
 }
 

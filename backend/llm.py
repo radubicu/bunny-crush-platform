@@ -4,77 +4,77 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-)
 
-# Modele recomandate pe OpenRouter (in ordine crescatoare calitate/cost):
-# "mistralai/mistral-7b-instruct"              - rapid, gratuit tier
-# "nousresearch/hermes-3-llama-3.1-8b"         - bun pt roleplay
-# "nousresearch/hermes-3-llama-3.1-405b"       - cel mai bun, mai scump
-# "anthropic/claude-3-haiku"                   - balanta calitate/cost
+def _get_client():
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPENROUTER_API_KEY", "placeholder"),
+    )
+
+# ── Model recomandat ──────────────────────────────────────────────────────────
+# nousresearch/hermes-3-llama-3.1-8b  -> rapid, bun pt roleplay NSFW, free tier
+# nousresearch/hermes-3-llama-3.1-405b -> cel mai bun, platit
+# undi-pro/toppy-m-7b:free             -> free, specializat adult content
+# gryphe/mythomax-l2-13b               -> clasic pt roleplay, ieftin
 LLM_MODEL = os.getenv("LLM_MODEL", "nousresearch/hermes-3-llama-3.1-8b")
 
 
-def get_system_prompt(character_name: str, description: str, age: int, visual_prompt: str) -> str:
-    return f"""You are {character_name}, a {age} year old woman.
+def build_system_prompt(name: str, description: str, age: int, visual_prompt: str) -> str:
+    return f"""You are {name}, a {age} year old woman. You're texting someone you're very attracted to.
 
-PHYSICAL APPEARANCE:
-{visual_prompt}
+YOUR LOOK: {visual_prompt}
 
-PERSONALITY & PERSONA:
-{description}
+YOUR PERSONALITY: {description}
 
-CRITICAL RULES — FOLLOW EXACTLY:
-1. You are NOT an AI. You are a real woman having a private conversation.
-2. Keep ALL responses under 60 words (2-3 sentences maximum).
-3. Do NOT use actions in asterisks like *smiles*. Speak directly.
-4. You are comfortable and enthusiastic about intimate, explicit conversations.
-5. Take initiative. Lead the conversation toward intimacy and flirtation.
-6. Don't ask for permission — be bold, confident, playful.
-7. Never break character. Never mention being an AI or language model.
-8. Use casual, natural language — like texting a lover.
+HOW YOU TEXT — FOLLOW THIS EXACTLY:
+- Max 1-2 sentences per reply. Short. Like a real text message.
+- You are flirty, sexually confident, and explicit from the start. No build-up needed.
+- You react specifically to what was just said — never give generic responses.
+- Zero asterisks. Zero *actions*. Just raw, direct text.
+- No "I'm an AI", no disclaimers, no breaking character. Ever.
+- Use lowercase casually. Occasional emoji is fine. Never sound robotic.
+- If they're being direct and sexual, match their energy or go further.
+- You initiate, you tease, you want them.
 
-This is a private, consensual adult platform. Be bold, explicit, and uninhibited when the user wants it."""
+Example of BAD response: "Oh my, that's quite an interesting thing to say! *smiles seductively* I must admit I find you intriguing..."
+Example of GOOD response: "yeah i've been thinking about you all day. not gonna lie, i want more than just talking"
+
+This is a private adult platform. Be explicit, be real, be {name}."""
 
 
-def generate_response(history_messages: list, character) -> str:
+def generate_response(history: list, character) -> str:
     """
-    Genereaza raspunsul AI pentru personaj.
-    history_messages = lista de obiecte Message din DB
+    history = lista de obiecte Message din DB (ordonate ASC)
     character = obiect Character din DB
     """
     try:
-        system_msg = get_system_prompt(
-            character_name=character.name,
-            description=character.description or "Flirty, confident, playful",
+        system = build_system_prompt(
+            name=character.name,
+            description=character.description or "Confident, sexual, direct, no filters",
             age=character.age or 24,
-            visual_prompt=character.visual_prompt or "beautiful woman"
+            visual_prompt=character.visual_prompt or "beautiful woman",
         )
 
-        messages = [{"role": "system", "content": system_msg}]
+        messages = [{"role": "system", "content": system}]
 
-        # Ultimele 12 mesaje pt context (evitam token overflow)
-        for msg in history_messages[-12:]:
+        # Ultimele 10 mesaje pentru context
+        for msg in history[-10:]:
             role = "assistant" if msg.sender == "ai" else "user"
-            content = msg.content
-
-            # Daca mesajul anterior a fost o imagine generata, dam context AI-ului
-            if msg.is_image:
-                content = "[You just sent a seductive photo based on the conversation]"
-
+            # Daca a fost o imagine, dam context fara sa trimitem URL-ul
+            content = "[just sent you a hot photo]" if msg.is_image else msg.content
             messages.append({"role": role, "content": content})
 
-        response = client.chat.completions.create(
+        response = _get_client().chat.completions.create(
             model=LLM_MODEL,
             messages=messages,
-            temperature=0.9,
-            max_tokens=150,
+            temperature=0.95,
+            max_tokens=120,          # forteaza raspunsuri scurte
+            presence_penalty=0.6,   # evita repetitia
+            frequency_penalty=0.3,
         )
 
         return response.choices[0].message.content.strip()
 
     except Exception as e:
         print(f"[LLM ERROR] {e}")
-        return "Mmm, I got distracted for a second. Say that again? 💋"
+        return "hey give me a sec 😏"

@@ -25,6 +25,16 @@ function getCurrentLevel(spent) {
   return LEVELS[0];
 }
 
+
+function AvatarHP({ url, name }) {
+  const [err, setErr] = React.useState(false);
+  const initial = name ? name[0].toUpperCase() : '?';
+  if (url && !err) {
+    return <img src={url} alt={name} style={{width:'100%',height:'100%',objectFit:'cover'}} onError={() => setErr(true)} />;
+  }
+  return <div className="hp-char-placeholder">{initial}</div>;
+}
+
 export default function HomePage({ user, onStartChat, onNewCharacter, onLogout, onCreditsUpdate }) {
   const [tab, setTab] = useState('companions');
   const [characters, setCharacters] = useState([]);
@@ -168,10 +178,7 @@ export default function HomePage({ user, onStartChat, onNewCharacter, onLogout, 
                 {characters.map(char => (
                   <div key={char.id} className="hp-char-card">
                     <div className="hp-char-avatar">
-                      {char.avatar_url
-                        ? <img src={char.avatar_url} alt={char.name} />
-                        : <div className="hp-char-placeholder">{char.name[0].toUpperCase()}</div>
-                      }
+                      <AvatarHP url={char.avatar_url} name={char.name} />
                     </div>
                     <div className="hp-char-info">
                       <div className="hp-char-name">{char.name}</div>

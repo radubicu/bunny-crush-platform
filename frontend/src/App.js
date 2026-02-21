@@ -5,6 +5,7 @@ import CharacterCreator from './CharacterCreator';
 import ChatPage from './ChatPage';
 import HomePage from './HomePage';
 import { getMe } from './api';
+const BUNNY_LOGO = '/bunny-ears.png';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -62,7 +63,7 @@ function App() {
   if (loading) {
     return (
       <div className="loading-screen">
-        <div className="loading-logo">bunny crush</div>
+        <div className="loading-logo"><img src={BUNNY_LOGO} alt="" style={{width:'60px', marginBottom:'12px', display:'block', margin:'0 auto 12px'}} />bunny crush</div>
         <div className="loading-dots">
           <span /><span /><span />
         </div>
@@ -78,7 +79,10 @@ function App() {
       {view === 'landing' && (
         <>
           <header className="header">
-            <button className="logo" onClick={() => setView('landing')}>bunny crush</button>
+            <button className="logo" onClick={() => setView('landing')}>
+            <img src={BUNNY_LOGO} alt="" className="logo-ears" />
+            bunny crush
+          </button>
             <nav className="header-nav">
               <button className="btn-ghost" onClick={() => setShowAuth(true)}>Sign in</button>
               <button className="btn-primary" onClick={() => setShowAuth(true)}>Get started</button>
@@ -92,7 +96,10 @@ function App() {
       {view === 'home' && user && (
         <>
           <header className="header">
-            <button className="logo" onClick={() => setView('home')}>bunny crush</button>
+            <button className="logo" onClick={() => setView('home')}>
+            <img src={BUNNY_LOGO} alt="" className="logo-ears" />
+            bunny crush
+          </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>
               <span className="header-username">{user.username || user.email.split('@')[0]}</span>
@@ -113,7 +120,10 @@ function App() {
       {view === 'chat' && activeCharacter && (
         <>
           <header className="header">
-            <button className="logo" onClick={() => setView('home')}>bunny crush</button>
+            <button className="logo" onClick={() => setView('home')}>
+            <img src={BUNNY_LOGO} alt="" className="logo-ears" />
+            bunny crush
+          </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>
               <span className="header-username">{user.username || user.email.split('@')[0]}</span>
@@ -134,7 +144,10 @@ function App() {
       {view === 'creator' && (
         <>
           <header className="header">
-            <button className="logo" onClick={() => setView('home')}>bunny crush</button>
+            <button className="logo" onClick={() => setView('home')}>
+            <img src={BUNNY_LOGO} alt="" className="logo-ears" />
+            bunny crush
+          </button>
             <nav className="header-nav">
               <div className="credits-badge">{user.credits} credits</div>
               <button className="btn-ghost" onClick={() => setView('home')}>Back</button>
