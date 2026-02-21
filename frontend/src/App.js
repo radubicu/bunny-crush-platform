@@ -6,7 +6,7 @@ import ChatPage from './ChatPage';
 import HomePage from './HomePage';
 import { getMe } from './api';
 import WelcomePopup from './WelcomePopup';
-import { BUNNY_LOGO } from './bunnyLogo';
+const BUNNY_LOGO = '/bunny-ears.png';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -88,7 +88,7 @@ function App() {
           <header className="header">
             <button className="logo" onClick={() => setView('landing')}>
             <img src={BUNNY_LOGO} alt="" className="logo-ears" />
-            bunny crush
+            Bunny Crush
           </button>
             <nav className="header-nav">
               <button className="btn-ghost" onClick={() => setShowAuth(true)}>Sign in</button>
