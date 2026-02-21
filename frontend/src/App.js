@@ -9,8 +9,9 @@ import { getMe } from './api';
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('home'); // 'home' | 'chat' | 'dashboard' | 'creator'
+  const [view, setView] = useState('home'); // 'home' | 'chat' | 'creator'
   const [showAuth, setShowAuth] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
   const [activeCharacter, setActiveCharacter] = useState(null);
 
   useEffect(() => {
@@ -18,7 +19,10 @@ function App() {
     if (token) {
       getMe()
         .then(r => setUser(r.data))
-        .catch(() => localStorage.removeItem('token'))
+        .catch(() => {
+          localStorage.removeItem('token');
+          setUser(null);
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -28,7 +32,7 @@ function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     setShowAuth(false);
-    setView('dashboard');
+    setShowDashboard(true);
   };
 
   const handleLogout = () => {
@@ -36,16 +40,23 @@ function App() {
     setUser(null);
     setView('home');
     setActiveCharacter(null);
+    setShowDashboard(false);
   };
 
   const handleStartChat = (char) => {
     setActiveCharacter(char);
     setView('chat');
+    setShowDashboard(false);
   };
 
   const handleCharacterCreated = (char) => {
     setActiveCharacter(char);
     setView('chat');
+    setShowDashboard(false);
+  };
+
+  const handleCreditsUpdate = (credits) => {
+    setUser(u => ({ ...u, credits }));
   };
 
   if (loading) {
@@ -61,7 +72,6 @@ function App() {
 
   return (
     <div className="app">
-      {/* Background mesh */}
       <div className="bg-mesh" />
 
       {/* Header */}
@@ -78,16 +88,13 @@ function App() {
               </div>
               <button
                 className="btn-ghost"
-                onClick={() => setView('dashboard')}
+                onClick={() => setShowDashboard(true)}
               >
                 {user.username || user.email.split('@')[0]}
               </button>
               <button
                 className="btn-primary"
-                onClick={() => {
-                  if (!user) { setShowAuth(true); return; }
-                  setView('creator');
-                }}
+                onClick={() => setView('creator')}
               >
                 New Character
               </button>
@@ -109,13 +116,11 @@ function App() {
       {view === 'home' && (
         <HomePage
           user={user}
-          onStartChat={handleStartChat}
           onShowAuth={() => setShowAuth(true)}
           onNewCharacter={() => {
             if (!user) { setShowAuth(true); return; }
             setView('creator');
           }}
-          onOpenDashboard={() => setView('dashboard')}
           onSelectCharacter={handleStartChat}
         />
       )}
@@ -125,19 +130,8 @@ function App() {
           character={activeCharacter}
           user={user}
           onBack={() => setView('home')}
-          onCreditsUpdate={(credits) => setUser(u => ({ ...u, credits }))}
+          onCreditsUpdate={handleCreditsUpdate}
           onShowAuth={() => setShowAuth(true)}
-        />
-      )}
-
-      {view === 'dashboard' && (
-        <Dashboard
-          user={user}
-          onClose={() => setView('home')}
-          onStartChat={handleStartChat}
-          onNewCharacter={() => setView('creator')}
-          onCreditsUpdate={(credits) => setUser(u => ({ ...u, credits }))}
-          onLogout={handleLogout}
         />
       )}
 
@@ -145,6 +139,21 @@ function App() {
         <CharacterCreator
           onCreated={handleCharacterCreated}
           onClose={() => setView('home')}
+        />
+      )}
+
+      {/* Dashboard este OVERLAY - nu schimba view-ul, nu reseteaza nimic */}
+      {showDashboard && user && (
+        <Dashboard
+          user={user}
+          onClose={() => setShowDashboard(false)}
+          onStartChat={handleStartChat}
+          onNewCharacter={() => {
+            setShowDashboard(false);
+            setView('creator');
+          }}
+          onCreditsUpdate={handleCreditsUpdate}
+          onLogout={handleLogout}
         />
       )}
 
@@ -172,7 +181,6 @@ function HomePage({ user, onShowAuth, onNewCharacter, onSelectCharacter }) {
 
   return (
     <main className="home">
-      {/* Hero */}
       <section className="hero">
         <div className="hero-tag">AI Companion Platform</div>
         <h1 className="hero-title">
@@ -201,7 +209,6 @@ function HomePage({ user, onShowAuth, onNewCharacter, onSelectCharacter }) {
         </div>
       </section>
 
-      {/* Characters grid if logged in */}
       {user && characters.length > 0 && (
         <section className="chars-section">
           <div className="section-header">
@@ -226,7 +233,6 @@ function HomePage({ user, onShowAuth, onNewCharacter, onSelectCharacter }) {
         </section>
       )}
 
-      {/* Empty state */}
       {user && characters.length === 0 && (
         <section className="empty-state">
           <div className="empty-icon">
@@ -243,7 +249,6 @@ function HomePage({ user, onShowAuth, onNewCharacter, onSelectCharacter }) {
         </section>
       )}
 
-      {/* Features */}
       {!user && (
         <section className="features">
           {[
