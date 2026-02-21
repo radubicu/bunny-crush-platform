@@ -37,11 +37,11 @@ def startup():
     db = database.SessionLocal()
     try:
         packages = [
-            {"id": "starter",    "name": "Starter",  "credits": 100,  "bonus_credits": 0,    "price_eur": 9.99},
-            {"id": "basic",      "name": "Basic",    "credits": 250,  "bonus_credits": 10,   "price_eur": 19.99},
-            {"id": "popular",    "name": "Popular",  "credits": 600,  "bonus_credits": 60,   "price_eur": 39.99},
-            {"id": "pro",        "name": "Pro",      "credits": 1500, "bonus_credits": 300,  "price_eur": 89.99},
-            {"id": "vip",        "name": "VIP",      "credits": 4000, "bonus_credits": 1200, "price_eur": 199.99},
+            {"id": "starter",    "name": "Starter",  "credits": 100,  "bonus_credits": 0,    "price_usd": 9.99},
+            {"id": "basic",      "name": "Basic",    "credits": 250,  "bonus_credits": 10,   "price_usd": 19.99},
+            {"id": "popular",    "name": "Popular",  "credits": 600,  "bonus_credits": 60,   "price_usd": 39.99},
+            {"id": "pro",        "name": "Pro",      "credits": 1500, "bonus_credits": 300,  "price_usd": 89.99},
+            {"id": "vip",        "name": "VIP",      "credits": 4000, "bonus_credits": 1200, "price_usd": 199.99},
         ]
         for p in packages:
             if not db.query(models.CreditPackage).filter_by(id=p["id"]).first():

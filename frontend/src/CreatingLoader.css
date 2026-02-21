@@ -1,0 +1,215 @@
+.cl-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 7, 14, 0.96);
+  backdrop-filter: blur(12px);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.4s ease;
+}
+
+.cl-card {
+  width: 100%;
+  max-width: 400px;
+  background: #12111a;
+  border: 1px solid rgba(183, 87, 255, 0.2);
+  border-radius: 24px;
+  padding: 36px 32px 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8);
+}
+
+.cl-glow {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(183,87,255,0.25) 0%, transparent 70%);
+  pointer-events: none;
+  animation: glowPulse 2s ease-in-out infinite alternate;
+}
+
+.cl-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+/* Avatar ring */
+.cl-avatar-ring {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin-bottom: 20px;
+}
+
+.cl-avatar-inner {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(183,87,255,0.2), rgba(255,107,189,0.2));
+  border: 1px solid rgba(183,87,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(183,87,255,0.8);
+}
+
+.cl-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cl-title {
+  font-family: var(--font-display, 'Playfair Display', serif);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.cl-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  margin: 0;
+}
+
+/* Steps */
+.cl-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cl-step {
+  transition: opacity 0.3s;
+}
+
+.cl-step.pending {
+  opacity: 0.35;
+}
+
+.cl-step.active {
+  opacity: 1;
+}
+
+.cl-step.done {
+  opacity: 0.6;
+}
+
+.cl-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.cl-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+}
+
+.cl-step-pct {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  justify-content: flex-end;
+}
+
+.cl-step.active .cl-step-pct {
+  color: var(--primary, #b757ff);
+}
+
+.cl-step.done .cl-step-pct {
+  color: #4ade80;
+}
+
+.cl-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(183,87,255,0.3);
+  border-top-color: #b757ff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.cl-bar {
+  height: 5px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cl-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #b757ff, #ff6bbd);
+  transition: width 0.1s linear;
+}
+
+.cl-step.done .cl-bar-fill {
+  background: #4ade80;
+}
+
+/* Done state */
+.cl-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 14px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 12px;
+  color: #4ade80;
+  font-size: 14px;
+  font-weight: 700;
+  animation: fadeIn 0.4s ease;
+}
+
+.cl-done-icon {
+  width: 22px;
+  height: 22px;
+  background: #4ade80;
+  color: #08070e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glowPulse {
+  from { opacity: 0.5; transform: translateX(-50%) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}

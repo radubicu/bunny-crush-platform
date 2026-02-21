@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createCharacter } from './api';
+import CreatingLoader from './CreatingLoader';
 import './CharacterCreator.css';
 
 const HAIR_OPTIONS = ['long blonde', 'short brunette', 'red curly', 'black straight', 'platinum', 'auburn waves'];
@@ -10,6 +11,8 @@ const STYLE_OPTIONS = ['casual', 'elegant', 'sporty', 'edgy', 'glamorous'];
 function CharacterCreator({ onCreated, onClose }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
+  const [createdChar, setCreatedChar] = useState(null);
   const [error, setError] = useState('');
 
   const [name, setName] = useState('');
@@ -40,7 +43,8 @@ function CharacterCreator({ onCreated, onClose }) {
         description: buildDescription(),
         visual_prompt: buildVisualPrompt(),
       });
-      onCreated(res.data);
+      setCreatedChar(res.data);
+      setShowLoader(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create character.');
     } finally {
@@ -53,6 +57,15 @@ function CharacterCreator({ onCreated, onClose }) {
     { num: 2, label: 'Looks' },
     { num: 3, label: 'Personality' },
   ];
+
+  if (showLoader && createdChar) {
+    return (
+      <CreatingLoader onDone={() => {
+        setShowLoader(false);
+        onCreated(createdChar);
+      }} />
+    );
+  }
 
   return (
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
