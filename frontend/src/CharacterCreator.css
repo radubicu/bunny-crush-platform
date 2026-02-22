@@ -138,6 +138,10 @@
   display: block;
 }
 
+.hair-grid .opt-btn.has-img .opt-img {
+  height: 150px;
+}
+
 .opt-btn.has-img .opt-label {
   padding: 8px 6px;
   display: block;

@@ -153,7 +153,7 @@ function CharacterCreator({ onCreated, onClose, guestMode = false }) {
           <div className="step-body">
             <div className="form-field">
               <label>Hair</label>
-              <div className="options-grid">
+              <div className="options-grid hair-grid">
                 {HAIR_OPTIONS.map(o => (
                   <button key={o} className={`opt-btn ${OPTION_IMAGES[o] ? 'has-img' : ''} ${hair === o ? 'selected' : ''}`} onClick={() => setHair(o)}>
                     {OPTION_IMAGES[o] && <img src={OPTION_IMAGES[o]} alt={o} className="opt-img" />}
