@@ -14,7 +14,7 @@ import utils
 import llm
 import image_gen
 
-# ── Initializare ──────────────────────────────────────────────────────────────
+# ── Initialize ───────────────────────────────────────────────────────────────
 models.Base.metadata.create_all(bind=database.engine)
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -51,7 +51,7 @@ app.add_middleware(
 )
 
 
-# ── Seed pachete credite la pornire ───────────────────────────────────────────
+# ── Seed credit packages on startup ──────────────────────────────────────────
 @app.on_event("startup")
 def startup():
     db = database.SessionLocal()
@@ -62,8 +62,8 @@ def startup():
             {"id": "popular",     "name": "Popular",      "credits": 600,  "bonus_credits": 60,   "price_usd": 39.99},
             {"id": "pro",         "name": "Premium",      "credits": 1500, "bonus_credits": 300,  "price_usd": 89.99},
             {"id": "vip",         "name": "Premium",      "credits": 4000, "bonus_credits": 1200, "price_usd": 199.99},
-            {"id": "sub_monthly", "name": "Monthly Sub",  "credits": 9999, "bonus_credits": 0,    "price_usd": 10.00},
-            {"id": "sub_annual",  "name": "Annual Sub",   "credits": 9999, "bonus_credits": 0,    "price_usd": 99.99},
+            {"id": "sub_monthly", "name": "Monthly Sub",  "credits": 100,  "bonus_credits": 0,    "price_usd": 10.00},
+            {"id": "sub_annual",  "name": "Annual Sub",   "credits": 1000, "bonus_credits": 0,    "price_usd": 72.00},
         ]
         for p in packages:
             if not db.query(models.CreditPackage).filter_by(id=p["id"]).first():
@@ -89,8 +89,8 @@ class UserLogin(BaseModel):
 class CharacterCreate(BaseModel):
     name: str
     age: Optional[int] = 24
-    description: str       # personalitate
-    visual_prompt: str     # aspect fizic
+    description: str       # personality
+    visual_prompt: str     # physical appearance
 
 class ChatRequest(BaseModel):
     character_id: str
@@ -114,17 +114,17 @@ class LikeRequest(BaseModel):
 # AUTH
 # ═══════════════════════════════════════════════════════════
 
-@app.post("/auth/register", summary="Inregistrare cont nou")
+@app.post("/auth/register", summary="Register new account")
 def register(body: UserRegister, db: Session = Depends(database.get_db)):
     if db.query(models.User).filter(models.User.email == body.email).first():
-        raise HTTPException(400, "Email-ul este deja inregistrat.")
+        raise HTTPException(400, "This email is already registered.")
 
     if body.username:
         if db.query(models.User).filter(models.User.username == body.username).first():
-            raise HTTPException(400, "Username-ul este deja folosit.")
+            raise HTTPException(400, "This username is already taken.")
 
     if len(body.password) < 6:
-        raise HTTPException(400, "Parola trebuie sa aiba minim 6 caractere.")
+        raise HTTPException(400, "Password must be at least 6 characters.")
 
     user = models.User(
         email=body.email,
@@ -150,11 +150,11 @@ def register(body: UserRegister, db: Session = Depends(database.get_db)):
     }
 
 
-@app.post("/auth/login", summary="Autentificare")
+@app.post("/auth/login", summary="Login")
 def login(body: UserLogin, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == body.email).first()
     if not user or not utils.verify_password(body.password, user.hashed_password):
-        raise HTTPException(401, "Email sau parola incorecta.")
+        raise HTTPException(401, "Incorrect email or password.")
 
     user.last_login = datetime.utcnow()
     db.commit()
@@ -167,7 +167,7 @@ def login(body: UserLogin, db: Session = Depends(database.get_db)):
     }
 
 
-@app.get("/auth/me", summary="Date cont curent")
+@app.get("/auth/me", summary="Current account info")
 def get_me(user: models.User = Depends(utils.get_current_user)):
     return _user_response(user)
 
@@ -189,7 +189,7 @@ def _user_response(user: models.User) -> dict:
 # CHARACTERS
 # ═══════════════════════════════════════════════════════════
 
-@app.post("/characters", summary="Creeaza personaj")
+@app.post("/characters", summary="Create character")
 def create_character(
     body: CharacterCreate,
     db: Session = Depends(database.get_db),
@@ -197,12 +197,12 @@ def create_character(
 ):
     seed = random.randint(1, 999999)
 
-    # Generam avatarul initial prin Replicate
+    # Generate initial avatar
     try:
         avatar_url = image_gen.generate_avatar(body.visual_prompt, seed=seed)
     except Exception as e:
         print(f"[AVATAR GEN ERROR] {e}")
-        avatar_url = None  # nu blocam crearea daca genul esueza
+        avatar_url = None  # don't block creation if avatar gen fails
 
     char = models.Character(
         user_id=user.id,
@@ -220,7 +220,7 @@ def create_character(
     return _char_response(char)
 
 
-@app.get("/characters", summary="Lista personajelor mele")
+@app.get("/characters", summary="List my characters")
 def list_characters(
     db: Session = Depends(database.get_db),
     user: models.User = Depends(utils.get_current_user),
@@ -229,7 +229,7 @@ def list_characters(
     return [_char_response(c) for c in chars]
 
 
-@app.get("/characters/{char_id}", summary="Detalii personaj")
+@app.get("/characters/{char_id}", summary="Character details")
 def get_character(
     char_id: str,
     db: Session = Depends(database.get_db),
@@ -239,7 +239,7 @@ def get_character(
     return _char_response(char)
 
 
-@app.delete("/characters/{char_id}", summary="Sterge personaj")
+@app.delete("/characters/{char_id}", summary="Delete character")
 def delete_character(
     char_id: str,
     db: Session = Depends(database.get_db),
@@ -248,7 +248,7 @@ def delete_character(
     char = _get_char_or_404(char_id, user.id, db)
     db.delete(char)
     db.commit()
-    return {"message": "Personaj sters."}
+    return {"message": "Character deleted."}
 
 
 def _get_char_or_404(char_id: str, user_id: str, db: Session) -> models.Character:
@@ -257,7 +257,7 @@ def _get_char_or_404(char_id: str, user_id: str, db: Session) -> models.Characte
         models.Character.user_id == user_id,
     ).first()
     if not char:
-        raise HTTPException(404, "Personajul nu a fost gasit.")
+        raise HTTPException(404, "Character not found.")
     return char
 
 
