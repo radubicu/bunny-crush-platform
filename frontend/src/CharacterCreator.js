@@ -12,10 +12,14 @@ const OPTION_IMAGES = {
   'black straight': '/IMG_8090.jpeg',
   'auburn waves': '/IMG_8092.jpeg',
   'long blonde': '/IMG_8094.jpeg',
+  'red curly': '/IMG_8000.jpg',
+  'short brunette': '/IMG_90002.jpg',
+  'platinum': '/IMG_8002.jpg',
   'petite': '/IMG_8108.jpeg',
   'curvy': '/IMG_8103.jpeg',
   'slim': '/IMG_8106.jpeg',
   'athletic': '/IMG_8107.jpeg',
+  'tall & lean': '/IMG_9000.jpeg',
 };
 
 function CharacterCreator({ onCreated, onClose, guestMode = false }) {
