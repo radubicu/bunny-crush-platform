@@ -6,6 +6,7 @@ import ChatPage from './ChatPage';
 import HomePage from './HomePage';
 import { getMe, createCharacter } from './api';
 import PaywallScreen from './PaywallScreen';
+import CreatingLoader from './CreatingLoader';
 const BUNNY_LOGO = '/bunny-ears.png';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showCreatingLoader, setShowCreatingLoader] = useState(false);
   const [pendingCharData, setPendingCharData] = useState(null);     // form data (guest flow)
   const [subscribeError, setSubscribeError] = useState('');
   const [paywallCharName, setPaywallCharName] = useState('');
@@ -87,10 +89,10 @@ function App() {
     setShowAuth(false);
     setView('home');
 
-    // Always show paywall if user is not premium (register or login)
+    // Non-premium: show creating loader first to build tension, then paywall
     if (!userData.is_premium) {
       setPaywallCharName(pendingCharData?.name || '');
-      setShowPaywall(true);
+      setShowCreatingLoader(true);
     }
   };
 
