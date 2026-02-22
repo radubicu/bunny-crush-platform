@@ -14,7 +14,7 @@ def _get_client():
 # mistralai/mistral-7b-instruct:free - free, works well for chat
 # nousresearch/hermes-3-llama-3.1-8b - good for NSFW
 # gryphe/mythomax-l2-13b - classic roleplay model
-LLM_MODEL = os.getenv("LLM_MODEL", "mistralai/mistral-7b-instruct:free")
+LLM_MODEL = os.getenv("LLM_MODEL", "mistralai/mistral-7b-instruct")
 
 
 def build_system_prompt(name: str, description: str, age: int, visual_prompt: str) -> str:

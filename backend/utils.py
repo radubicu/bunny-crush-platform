@@ -10,7 +10,10 @@ import database
 import models
 
 # ── Configurare JWT ───────────────────────────────────────────────────────────
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "SCHIMBA_IN_PRODUCTIE_foloseste_openssl_rand_hex_32")
+_DEFAULT_SECRET = "SCHIMBA_IN_PRODUCTIE_foloseste_openssl_rand_hex_32"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", _DEFAULT_SECRET)
+if SECRET_KEY == _DEFAULT_SECRET and os.getenv("ENVIRONMENT") != "development":
+    raise RuntimeError("JWT_SECRET_KEY must be set in production! Generate one with: openssl rand -hex 32")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 
@@ -27,7 +30,7 @@ CREDIT_COSTS = {
 }
 
 COST_TEXT_MESSAGE = 1
-COST_IMAGE_SAFE = 7
+COST_IMAGE_NORMAL = 7
 COST_IMAGE_NSFW = 15
 
 # ── Parole ────────────────────────────────────────────────────────────────────

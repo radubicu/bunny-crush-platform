@@ -73,11 +73,11 @@ function App() {
     setUser(userData);
     setShowAuth(false);
 
-    // If guest came through character creation, show paywall next
-    const hasPending = pendingCharData || sessionStorage.getItem('pendingCharData');
-    if (hasPending) {
+    // Always show paywall after account creation (registration)
+    if (authMode === 'register') {
       setShowPaywall(true);
     } else {
+      // Login — go straight to home
       setView('home');
     }
   };
