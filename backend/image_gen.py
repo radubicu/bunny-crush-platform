@@ -1,8 +1,8 @@
-import replicate
 import os
 import random
+import requests
 
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
+FAL_MODEL = "fal-ai/flux/dev"
 
 BASE_QUALITY = (
     "RAW photo, 8k uhd, photorealistic, dslr, sharp focus, "
@@ -36,29 +36,43 @@ def generate_image(visual_prompt: str, scenario: str, nsfw: bool = False, seed: 
         seed = random.randint(1, 2**32 - 1)
 
     prompt = build_prompt(visual_prompt, scenario, nsfw)
+    fal_key = os.getenv("FAL_KEY")
+
+    if not fal_key:
+        raise RuntimeError("FAL_KEY not configured")
 
     try:
-        # Use flux-dev for both SFW and NSFW - reliable and high quality
-        output = replicate.run(
-            "black-forest-labs/flux-dev",
-            input={
-                "prompt": prompt,
-                "width": 768,
-                "height": 1024,
-                "num_inference_steps": 28,
-                "guidance": 3.5,
-                "seed": seed,
-                "output_format": "webp",
-                "output_quality": 90,
+        response = requests.post(
+            f"https://fal.run/{FAL_MODEL}",
+            headers={
+                "Authorization": f"Key {fal_key}",
+                "Content-Type": "application/json",
             },
+            json={
+                "prompt": prompt,
+                "image_size": {"width": 768, "height": 1024},
+                "num_inference_steps": 28,
+                "guidance_scale": 3.5,
+                "seed": seed,
+                "enable_safety_checker": False,
+                "num_images": 1,
+                "output_format": "jpeg",
+            },
+            timeout=180,
         )
 
-        if isinstance(output, list):
-            return str(output[0])
-        return str(output)
+        if response.status_code != 200:
+            raise RuntimeError(f"fal.ai API error {response.status_code}: {response.text[:500]}")
 
-    except Exception as e:
-        raise RuntimeError(f"Replicate image generation failed: {e}")
+        data = response.json()
+        images = data.get("images", [])
+        if not images:
+            raise RuntimeError("No images returned from fal.ai")
+
+        return images[0]["url"]
+
+    except requests.RequestException as e:
+        raise RuntimeError(f"fal.ai request failed: {e}")
 
 
 def generate_avatar(visual_prompt: str, seed: int = None) -> str:

@@ -8,7 +8,7 @@ const EYE_OPTIONS = ['blue', 'green', 'brown', 'hazel', 'gray', 'dark'];
 const BODY_OPTIONS = ['petite', 'athletic', 'curvy', 'slim', 'tall & lean'];
 const STYLE_OPTIONS = ['casual', 'elegant', 'sporty', 'edgy', 'glamorous'];
 
-function CharacterCreator({ onCreated, onClose }) {
+function CharacterCreator({ onCreated, onClose, guestMode = false }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
@@ -35,6 +35,18 @@ function CharacterCreator({ onCreated, onClose }) {
 
   const handleCreate = async () => {
     setError('');
+
+    // Guest mode: just pass form data up without calling the API
+    if (guestMode) {
+      onCreated({
+        name,
+        age,
+        description: buildDescription(),
+        visual_prompt: buildVisualPrompt(),
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await createCharacter({

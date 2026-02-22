@@ -20,7 +20,7 @@ const PLANS = [
   },
 ];
 
-export default function PaywallScreen({ characterName, onSubscribe, onBack }) {
+export default function PaywallScreen({ characterName, onSubscribe, onBack, error }) {
   const [selected, setSelected] = useState('monthly');
   const [loading, setLoading] = useState(false);
 
@@ -122,6 +122,12 @@ export default function PaywallScreen({ characterName, onSubscribe, onBack }) {
         <p className="pw-legal">
           Cancel anytime. Billed securely via Stripe.
         </p>
+
+        {error && (
+          <p style={{ color: '#ff6b6b', fontSize: '13px', textAlign: 'center', marginBottom: '8px', padding: '8px 12px', background: 'rgba(255,80,80,0.1)', borderRadius: '8px', border: '1px solid rgba(255,80,80,0.25)' }}>
+            {error}
+          </p>
+        )}
 
         {/* Back link */}
         <button className="pw-back" onClick={onBack}>

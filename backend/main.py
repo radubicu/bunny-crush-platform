@@ -22,9 +22,29 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 app = FastAPI(title="BunnyCrush API", version="1.0.0")
 
+def _build_cors_origins() -> list:
+    raw = os.getenv("ALLOWED_ORIGINS", "*").strip()
+    if raw == "*":
+        return ["*"]
+    origin_list = [o.strip() for o in raw.split(",") if o.strip()]
+    expanded = []
+    for origin in origin_list:
+        expanded.append(origin)
+        # Auto-include www <-> non-www variant
+        if origin.startswith("https://www."):
+            expanded.append("https://" + origin[12:])
+        elif origin.startswith("https://") and not origin.startswith("https://www."):
+            expanded.append("https://www." + origin[8:])
+        elif origin.startswith("http://www."):
+            expanded.append("http://" + origin[11:])
+        elif origin.startswith("http://") and not origin.startswith("http://www."):
+            expanded.append("http://www." + origin[7:])
+    return list(set(expanded))
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "*").split(","),
+    allow_origins=_build_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -325,7 +345,7 @@ def generate_image(
     # Deducem creditele
     utils.deduct_credits(user, cost, f"Poza {label} cu {char.name}", db)
 
-    # Generam prin Replicate
+    # Generam imaginea
     try:
         image_url = image_gen.generate_image(
             visual_prompt=char.visual_prompt,
@@ -334,7 +354,7 @@ def generate_image(
             seed=char.seed,
         )
     except RuntimeError as e:
-        # Daca Replicate esueaza, refundam creditele
+        # Daca generarea esueaza, refundam creditele
         utils.add_credits(user, cost, "Refund - eroare la generare imagine", db, transaction_type="refund")
         db.commit()
         raise HTTPException(500, f"Generarea imaginii a esuat: {str(e)}")
@@ -344,7 +364,7 @@ def generate_image(
         user_id=user.id,
         character_id=char.id,
         prompt=body.scenario,
-        nsfw=body.nsfw,
+        nsfw_level=1 if body.nsfw else 0,
         credits_cost=cost,
         image_url=image_url,
     )
@@ -430,7 +450,7 @@ def get_gallery(
             "id": img.id,
             "character_id": img.character_id,
             "image_url": img.image_url,
-            "nsfw": img.nsfw,
+            "nsfw": bool(img.nsfw_level),
             "credits_cost": img.credits_cost,
             "liked": img.liked,
             "created_at": img.created_at,
@@ -512,13 +532,14 @@ def create_checkout(
                 "quantity": 1,
             }]
 
+        # Use & if success_url already contains ?, else use ?
+        sep = "&" if "?" in body.success_url else "?"
         session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
             line_items=line_items,
             mode="payment",
-            success_url=body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
+            success_url=body.success_url + f"{sep}session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=body.cancel_url,
-            client_reference_id=user.id,   # legam sesiunea de userul nostru
+            client_reference_id=user.id,
             metadata={
                 "user_id": user.id,
                 "package_id": pkg.id,
@@ -528,7 +549,9 @@ def create_checkout(
         return {"checkout_url": session.url, "session_id": session.id}
 
     except stripe.error.StripeError as e:
-        raise HTTPException(400, f"Eroare Stripe: {str(e)}")
+        error_msg = getattr(e, 'user_message', None) or str(e)
+        print(f"[STRIPE ERROR] {type(e).__name__}: {error_msg}")
+        raise HTTPException(400, error_msg)
 
 
 @app.post("/credits/webhook", summary="Stripe webhook - procesare plati")

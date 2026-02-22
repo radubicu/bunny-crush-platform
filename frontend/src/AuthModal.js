@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { register, login } from './api';
 
-function AuthModal({ onSuccess, onClose }) {
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+function AuthModal({ onSuccess, onClose, defaultMode = 'login' }) {
+  const [mode, setMode] = useState(defaultMode); // 'login' | 'register'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
