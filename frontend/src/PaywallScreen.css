@@ -1,0 +1,328 @@
+.pw-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pw-bg {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 20% 0%, rgba(183,87,255,0.15) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 100%, rgba(255,107,189,0.1) 0%, transparent 50%),
+              #08070e;
+  z-index: 0;
+}
+
+.pw-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  background: #12111a;
+  border: 1px solid rgba(183,87,255,0.2);
+  border-radius: 28px;
+  padding: 36px 28px 28px;
+  overflow: hidden;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+}
+
+.pw-glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(183,87,255,0.2) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pwGlow 3s ease-in-out infinite alternate;
+}
+
+/* Header */
+.pw-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.pw-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.pw-avatar-ring {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(183,87,255,0.5);
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.pw-avatar-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(183,87,255,0.2), rgba(255,107,189,0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(183,87,255,0.8);
+}
+
+.pw-avatar-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pw-char-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  text-transform: capitalize;
+}
+
+.pw-char-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.pw-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74,222,128,0.6);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.pw-title {
+  font-family: var(--font-display, 'Playfair Display', serif);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+
+.pw-title em {
+  background: linear-gradient(135deg, #b757ff, #ff6bbd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-style: italic;
+}
+
+.pw-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Features */
+.pw-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.pw-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+}
+
+.pw-feature-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.pw-feature-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  font-weight: 500;
+}
+
+/* Plans */
+.pw-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pw-plan {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.02);
+}
+
+.pw-plan:hover {
+  border-color: rgba(183,87,255,0.3);
+}
+
+.pw-plan.selected {
+  border-color: #b757ff;
+  background: rgba(183,87,255,0.08);
+}
+
+.pw-plan-badge {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  background: linear-gradient(135deg, #b757ff, #ff6bbd);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.pw-plan-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pw-plan-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s;
+}
+
+.pw-plan.selected .pw-plan-radio {
+  border-color: #b757ff;
+}
+
+.pw-plan-radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #b757ff;
+}
+
+.pw-plan-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+}
+
+.pw-plan-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+
+.pw-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.pw-plan-amount {
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+}
+
+.pw-plan-period {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* CTA */
+.pw-cta {
+  width: 100%;
+  background: linear-gradient(135deg, #b757ff, #ff6bbd);
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 16px 20px;
+  cursor: pointer;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  transition: all 0.2s;
+  box-shadow: 0 4px 24px rgba(183,87,255,0.4);
+  margin-bottom: 12px;
+}
+
+.pw-cta:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(183,87,255,0.6);
+}
+
+.pw-cta:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pw-legal {
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.pw-back {
+  width: 100%;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.25);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  padding: 8px;
+  transition: color 0.2s;
+  text-decoration: underline;
+}
+
+.pw-back:hover {
+  color: rgba(255,255,255,0.4);
+}
+
+@keyframes pwGlow {
+  from { opacity: 0.4; transform: translateX(-50%) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (max-width: 480px) {
+  .pw-card { padding: 28px 20px 24px; border-radius: 20px; }
+  .pw-title { font-size: 1.5rem; }
+}

@@ -71,7 +71,7 @@ function CharacterCreator({ onCreated, onClose }) {
     <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: '580px' }}>
         <button className="modal-close" onClick={onClose}>&#x2715;</button>
-        <h2 className="modal-title">Create your companion</h2>
+        <h2 className="modal-title">Create your perfect girlfriend</h2>
 
         {/* Progress */}
         <div className="creator-steps">
@@ -209,7 +209,7 @@ function CharacterCreator({ onCreated, onClose }) {
                 {name.charAt(0).toUpperCase() || '?'}
               </div>
               <div className="preview-info">
-                <div className="preview-name">{name || 'Your companion'}, {age}</div>
+                <div className="preview-name">{name || 'Your perfect lady'}, {age}</div>
                 <div className="preview-looks">{hair} hair, {eyes} eyes, {body}</div>
                 <div className="preview-vibe">
                   {boldness >= 8 ? 'Very bold' : boldness >= 5 ? 'Confident' : 'Sweet'},
@@ -227,7 +227,7 @@ function CharacterCreator({ onCreated, onClose }) {
             <div className="step-nav">
               <button className="btn-ghost" onClick={() => setStep(2)}>Back</button>
               <button className="btn-primary" onClick={handleCreate} disabled={loading}>
-                {loading ? 'Creating...' : 'Create companion'}
+                {loading ? 'Creating...' : 'Create your girl'}
               </button>
             </div>
           </div>

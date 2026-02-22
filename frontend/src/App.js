@@ -6,6 +6,7 @@ import ChatPage from './ChatPage';
 import HomePage from './HomePage';
 import { getMe } from './api';
 import WelcomePopup from './WelcomePopup';
+import PaywallScreen from './PaywallScreen';
 const BUNNY_LOGO = '/bunny-ears.png';
 
 function App() {
@@ -15,6 +16,16 @@ function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [pendingCharacter, setPendingCharacter] = useState(null);
+
+  useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('join') === '1') {
+    setView('creator');
+    window.history.replaceState({}, '', '/');
+  }
+}, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -59,13 +70,31 @@ function App() {
   };
 
   const handleCharacterCreated = (char) => {
-    setActiveCharacter(char);
-    setView('chat');
-  };
+  setPendingCharacter(char);
+  setShowPaywall(true);
+};
 
   const handleCreditsUpdate = (credits) => {
     setUser(u => ({ ...u, credits }));
   };
+
+  const handleSubscribe = async (plan) => {
+  try {
+    const successUrl = window.location.origin + '?subscribed=1';
+    const cancelUrl = window.location.origin;
+    const packageId = plan === 'annual' ? 'sub_annual' : 'sub_monthly';
+    const { createCheckout } = await import('./api');
+    const res = await createCheckout(packageId, successUrl, cancelUrl);
+    if (res.data?.checkout_url) window.location.href = res.data.checkout_url;
+  } catch (e) {
+    console.error('Checkout error:', e);
+  }
+};
+
+const handlePaywallBack = () => {
+  setShowPaywall(false);
+  setShowWelcome(true);
+};
 
   if (loading) {
     return (
@@ -174,19 +203,24 @@ function App() {
         />
       )}
 
-      {showWelcome && !user && (
-        <WelcomePopup
-          onClose={() => {
-            localStorage.setItem('welcomeSeen', '1');
-            setShowWelcome(false);
-          }}
-          onSignUp={() => {
-            localStorage.setItem('welcomeSeen', '1');
-            setShowWelcome(false);
-            setShowAuth(true);
-          }}
-        />
-      )}
+      {showPaywall && (
+  <PaywallScreen
+    characterName={pendingCharacter?.name}
+    onSubscribe={handleSubscribe}
+    onBack={handlePaywallBack}
+  />
+)}
+
+{showWelcome && (
+  <WelcomePopup
+    characterName={pendingCharacter?.name}
+    onClose={() => setShowWelcome(false)}
+    onSubscribe={() => {
+      setShowWelcome(false);
+      setShowPaywall(true);
+    }}
+  />
+)}
     </div>
   );
 }

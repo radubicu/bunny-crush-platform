@@ -37,10 +37,13 @@ def startup():
     db = database.SessionLocal()
     try:
         packages = [
-            {"id": "starter",    "name": "Starter",    "credits": 50,   "bonus_credits": 0,   "price_usd": 4.99},
-            {"id": "popular",    "name": "Popular",    "credits": 150,  "bonus_credits": 25,  "price_usd": 9.99},
-            {"id": "best_value", "name": "Best Value", "credits": 500,  "bonus_credits": 150, "price_usd": 24.99},
-            {"id": "premium",    "name": "Premium",    "credits": 1000, "bonus_credits": 400, "price_usd": 39.99},
+            {"id": "starter",     "name": "Starter",      "credits": 100,  "bonus_credits": 0,    "price_usd": 9.99},
+            {"id": "basic",       "name": "Basic",        "credits": 250,  "bonus_credits": 10,   "price_usd": 19.99},
+            {"id": "popular",     "name": "Popular",      "credits": 600,  "bonus_credits": 60,   "price_usd": 39.99},
+            {"id": "pro",         "name": "Premium",      "credits": 1500, "bonus_credits": 300,  "price_usd": 89.99},
+            {"id": "vip",         "name": "Premium",      "credits": 4000, "bonus_credits": 1200, "price_usd": 199.99},
+            {"id": "sub_monthly", "name": "Monthly Sub",  "credits": 9999, "bonus_credits": 0,    "price_usd": 10.00},
+            {"id": "sub_annual",  "name": "Annual Sub",   "credits": 9999, "bonus_credits": 0,    "price_usd": 99.99},
         ]
         for p in packages:
             if not db.query(models.CreditPackage).filter_by(id=p["id"]).first():
@@ -503,7 +506,7 @@ def create_checkout(
                     "unit_amount": int(pkg.price_usd * 100),  # in eurocenti
                     "product_data": {
                         "name": f"BunnyCrush - {pkg.name}",
-                        "description": f"{pkg.credits + pkg.bonus_credits} credite ({pkg.credits} + {pkg.bonus_credits} bonus)",
+                        "description": f"{pkg.credits + pkg.bonus_credits} credits ({pkg.credits} + {pkg.bonus_credits} bonus)",
                     },
                 },
                 "quantity": 1,
@@ -568,13 +571,13 @@ async def stripe_webhook(request: Request):
                     utils.add_credits(
                         user=user,
                         amount=credits,
-                        description=f"Achizitie pachet {package_id} ({credits} credite)",
+                        description=f"Achizitie pachet {package_id} ({credits} credits)",
                         db=db,
                         transaction_type="purchase",
                         stripe_payment_id=stripe_payment_id,
                     )
                     db.commit()
-                    print(f"✅ Adaugate {credits} credite pentru user {user_id}")
+                    print(f"✅ Adaugate {credits} credits pentru user {user_id}")
             except Exception as e:
                 print(f"❌ Webhook processing error: {e}")
                 db.rollback()
