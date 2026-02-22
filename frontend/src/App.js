@@ -16,9 +16,12 @@ function App() {
   const [authMode, setAuthMode] = useState('login');
   const [activeCharacter, setActiveCharacter] = useState(null);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [pendingCharacter, setPendingCharacter] = useState(null);   // created char (logged-in flow)
   const [pendingCharData, setPendingCharData] = useState(null);     // form data (guest flow)
   const [subscribeError, setSubscribeError] = useState('');
+  const [paywallCharName, setPaywallCharName] = useState('');
+
+  // Helper: is the user a paying subscriber?
+  const isPremium = user?.is_premium === true;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -34,7 +37,7 @@ function App() {
     if (token) {
       getMe()
         .then(async (r) => {
-          setUser(r.data);
+          let userData = r.data;
 
           // Returning from Stripe payment - create pending character if any
           if (sessionId) {
@@ -49,9 +52,20 @@ function App() {
                 console.error('Failed to create character after payment:', e);
               }
             }
+            // Refresh user data to get updated is_premium
+            try {
+              const fresh = await getMe();
+              userData = fresh.data;
+            } catch (_) {}
           }
 
+          setUser(userData);
           setView('home');
+
+          // If user is NOT premium, block with paywall immediately
+          if (!userData.is_premium) {
+            setShowPaywall(true);
+          }
         })
         .catch(() => {
           localStorage.removeItem('token');
@@ -64,7 +78,6 @@ function App() {
       if (joinFlow) {
         setView('creator');
       }
-      // WelcomePopup removed - no longer auto-shown
     }
   }, []);
 
@@ -72,13 +85,12 @@ function App() {
   const handleAuthSuccess = (userData) => {
     setUser(userData);
     setShowAuth(false);
+    setView('home');
 
-    // Always show paywall after account creation (registration)
-    if (authMode === 'register') {
+    // Always show paywall if user is not premium (register or login)
+    if (!userData.is_premium) {
+      setPaywallCharName(pendingCharData?.name || '');
       setShowPaywall(true);
-    } else {
-      // Login — go straight to home
-      setView('home');
     }
   };
 
@@ -87,6 +99,7 @@ function App() {
     sessionStorage.removeItem('pendingCharData');
     setUser(null);
     setPendingCharData(null);
+    setShowPaywall(false);
     setView('landing');
     setActiveCharacter(null);
   };
@@ -98,8 +111,16 @@ function App() {
   };
 
   const handleCharacterCreated = (char) => {
-    setPendingCharacter(char);
-    setShowPaywall(true);
+    // Character created — if not premium, show paywall
+    if (!isPremium) {
+      setPaywallCharName(char?.name || '');
+      setShowPaywall(true);
+      setView('home');
+    } else {
+      // Premium user — go straight to chat with new character
+      setActiveCharacter(char);
+      setView('chat');
+    }
   };
 
   // ── Guest character flow ────────────────────────────────────────────
@@ -134,14 +155,19 @@ function App() {
   };
 
   const handlePaywallBack = () => {
+    // User declined to pay — log them out completely, back to landing
     setShowPaywall(false);
     setSubscribeError('');
-    // Clear guest pending data if they chose not to pay
+    setPaywallCharName('');
     if (pendingCharData) {
       setPendingCharData(null);
       sessionStorage.removeItem('pendingCharData');
     }
-    setView(user ? 'home' : 'landing');
+    // Non-premium users CANNOT access the platform — force logout
+    localStorage.removeItem('token');
+    setUser(null);
+    setView('landing');
+    setActiveCharacter(null);
   };
 
   if (loading) {
@@ -231,19 +257,31 @@ function App() {
       {view === 'creator' && (
         <>
           <header className="header">
-            <button className="logo" onClick={() => setView(user ? 'home' : 'landing')}>
+            <button className="logo" onClick={() => {
+              if (!user) { setView('landing'); }
+              else if (isPremium) { setView('home'); }
+              else { setShowPaywall(true); setView('home'); }
+            }}>
               <img src={BUNNY_LOGO} alt="" className="logo-ears" />
               Bunny Crush
             </button>
             <nav className="header-nav">
               {user && <div className="credits-badge">{user.credits} credits</div>}
-              <button className="btn-ghost" onClick={() => setView(user ? 'home' : 'landing')}>Back</button>
+              <button className="btn-ghost" onClick={() => {
+                if (!user) { setView('landing'); }
+                else if (isPremium) { setView('home'); }
+                else { setShowPaywall(true); setView('home'); }
+              }}>Back</button>
             </nav>
           </header>
           <CharacterCreator
             guestMode={!user}
             onCreated={user ? handleCharacterCreated : handleGuestCharCreated}
-            onClose={() => setView(user ? 'home' : 'landing')}
+            onClose={() => {
+              if (!user) { setView('landing'); }
+              else if (isPremium) { setView('home'); }
+              else { setShowPaywall(true); setView('home'); }
+            }}
           />
         </>
       )}
@@ -258,7 +296,7 @@ function App() {
 
       {showPaywall && (
         <PaywallScreen
-          characterName={pendingCharacter?.name || pendingCharData?.name}
+          characterName={paywallCharName || pendingCharData?.name}
           onSubscribe={handleSubscribe}
           onBack={handlePaywallBack}
           error={subscribeError}

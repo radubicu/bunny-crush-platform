@@ -532,11 +532,15 @@ def create_checkout(
                 "quantity": 1,
             }]
 
+        # Subscriptions (sub_*) use "subscription" mode; one-time packs use "payment"
+        is_subscription = pkg.id.startswith("sub_")
+        checkout_mode = "subscription" if is_subscription else "payment"
+
         # Use & if success_url already contains ?, else use ?
         sep = "&" if "?" in body.success_url else "?"
-        session = stripe.checkout.Session.create(
+        session_params = dict(
             line_items=line_items,
-            mode="payment",
+            mode=checkout_mode,
             success_url=body.success_url + f"{sep}session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=body.cancel_url,
             client_reference_id=user.id,
@@ -546,6 +550,11 @@ def create_checkout(
                 "credits": str(pkg.credits + pkg.bonus_credits),
             },
         )
+        # Subscription mode doesn't support one-time payment_intent, use subscription_data
+        if is_subscription:
+            session_params["subscription_data"] = {"metadata": session_params["metadata"]}
+
+        session = stripe.checkout.Session.create(**session_params)
         return {"checkout_url": session.url, "session_id": session.id}
 
     except stripe.error.StripeError as e:
@@ -583,7 +592,7 @@ async def stripe_webhook(request: Request):
         user_id = session.get("metadata", {}).get("user_id")
         credits_str = session.get("metadata", {}).get("credits")
         package_id = session.get("metadata", {}).get("package_id")
-        stripe_payment_id = session.get("payment_intent")
+        stripe_payment_id = session.get("payment_intent") or session.get("subscription")
 
         if user_id and credits_str:
             db = database.SessionLocal()
@@ -591,6 +600,9 @@ async def stripe_webhook(request: Request):
                 user = db.query(models.User).filter(models.User.id == user_id).first()
                 if user:
                     credits = int(credits_str)
+                    # Mark user as premium for subscription packages
+                    if package_id and package_id.startswith("sub_"):
+                        user.is_premium = True
                     utils.add_credits(
                         user=user,
                         amount=credits,

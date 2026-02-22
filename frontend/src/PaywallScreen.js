@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WelcomePopup from './WelcomePopup';
 import './PaywallScreen.css';
 
 const PLANS = [
@@ -23,6 +24,7 @@ const PLANS = [
 export default function PaywallScreen({ characterName, onSubscribe, onBack, error }) {
   const [selected, setSelected] = useState('monthly');
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubscribe = async () => {
     setLoading(true);
@@ -33,10 +35,36 @@ export default function PaywallScreen({ characterName, onSubscribe, onBack, erro
     }
   };
 
-  return (
-    <div className="pw-wrap">
-      <div className="pw-bg" />
+  // "No thanks" → show the "Are you sure?" WelcomePopup
+  const handleNoThanks = () => {
+    setShowConfirm(true);
+  };
 
+  // User confirmed they want to leave from WelcomePopup
+  const handleConfirmLeave = () => {
+    setShowConfirm(false);
+    onBack();
+  };
+
+  // User changed their mind in WelcomePopup → go back to paywall
+  const handleConfirmSubscribe = () => {
+    setShowConfirm(false);
+    handleSubscribe();
+  };
+
+  // If showing the "are you sure?" popup
+  if (showConfirm) {
+    return (
+      <WelcomePopup
+        characterName={characterName}
+        onClose={handleConfirmLeave}
+        onSubscribe={handleConfirmSubscribe}
+      />
+    );
+  }
+
+  return (
+    <div className="pw-overlay">
       <div className="pw-card">
         {/* Top glow */}
         <div className="pw-glow" />
@@ -72,10 +100,10 @@ export default function PaywallScreen({ characterName, onSubscribe, onBack, erro
         {/* Features */}
         <div className="pw-features">
           {[
-            { icon: '💬', text: 'Unlimited flirty conversations' },
-            { icon: '📸', text: 'Exclusive photos on demand' },
-            { icon: '🔥', text: 'Intimate content, no limits' },
-            { icon: '✨', text: 'She remembers everything about you' },
+            { icon: '\uD83D\uDCAC', text: 'Unlimited flirty conversations' },
+            { icon: '\uD83D\uDCF8', text: 'Exclusive photos on demand' },
+            { icon: '\uD83D\uDD25', text: 'Intimate content, no limits' },
+            { icon: '\u2728', text: 'She remembers everything about you' },
           ].map((f, i) => (
             <div key={i} className="pw-feature">
               <span className="pw-feature-icon">{f.icon}</span>
@@ -116,7 +144,7 @@ export default function PaywallScreen({ characterName, onSubscribe, onBack, erro
           onClick={handleSubscribe}
           disabled={loading}
         >
-          {loading ? 'Processing...' : 'Start now — meet her tonight'}
+          {loading ? 'Processing...' : 'Start now \u2014 meet her tonight'}
         </button>
 
         <p className="pw-legal">
@@ -129,8 +157,8 @@ export default function PaywallScreen({ characterName, onSubscribe, onBack, erro
           </p>
         )}
 
-        {/* Back link */}
-        <button className="pw-back" onClick={onBack}>
+        {/* Back link - shows "are you sure?" confirmation */}
+        <button className="pw-back" onClick={handleNoThanks}>
           No thanks, I'll pass
         </button>
       </div>
