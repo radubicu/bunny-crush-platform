@@ -275,10 +275,10 @@ def _char_response(char: models.Character) -> dict:
 
 
 # ═══════════════════════════════════════════════════════════
-# CHAT  (1 credit / mesaj)
+# CHAT  (1 credit / message)
 # ═══════════════════════════════════════════════════════════
 
-@app.post("/chat", summary="Trimite mesaj text")
+@app.post("/chat", summary="Send text message")
 def chat(
     body: ChatRequest,
     db: Session = Depends(database.get_db),
@@ -286,10 +286,10 @@ def chat(
 ):
     char = _get_char_or_404(body.character_id, user.id, db)
 
-    # Deducem creditul INAINTE sa generam raspunsul
-    utils.deduct_credits(user, utils.COST_TEXT_MESSAGE, f"Chat cu {char.name}", db)
+    # Deduct credit BEFORE generating the response
+    utils.deduct_credits(user, utils.COST_TEXT_MESSAGE, f"Chat with {char.name}", db)
 
-    # Salvam mesajul userului
+    # Save user message
     db.add(models.Message(
         character_id=char.id,
         sender="user",
@@ -298,7 +298,7 @@ def chat(
     ))
     db.flush()
 
-    # Luam istoricul pentru context AI
+    # Get history for AI context
     history = (
         db.query(models.Message)
         .filter(models.Message.character_id == char.id)
@@ -306,10 +306,10 @@ def chat(
         .all()
     )
 
-    # Generam raspunsul
+    # Generate response
     ai_text = llm.generate_response(history, char)
 
-    # Salvam raspunsul AI
+    # Save AI response
     db.add(models.Message(
         character_id=char.id,
         sender="ai",
@@ -328,10 +328,10 @@ def chat(
 
 
 # ═══════════════════════════════════════════════════════════
-# IMAGE GENERATION  (7 credite SFW / 15 credite NSFW)
+# IMAGE GENERATION  (7 credits SFW / 15 credits NSFW)
 # ═══════════════════════════════════════════════════════════
 
-@app.post("/images/generate", summary="Genereaza poza")
+@app.post("/images/generate", summary="Generate image")
 def generate_image(
     body: ImageRequest,
     db: Session = Depends(database.get_db),
@@ -340,12 +340,12 @@ def generate_image(
     char = _get_char_or_404(body.character_id, user.id, db)
 
     cost = utils.COST_IMAGE_NSFW if body.nsfw else utils.COST_IMAGE_NORMAL
-    label = "NSFW" if body.nsfw else "normala"
+    label = "NSFW" if body.nsfw else "Standard"
 
-    # Deducem creditele
-    utils.deduct_credits(user, cost, f"Poza {label} cu {char.name}", db)
+    # Deduct credits
+    utils.deduct_credits(user, cost, f"{label} photo with {char.name}", db)
 
-    # Generam imaginea
+    # Generate image
     try:
         image_url = image_gen.generate_image(
             visual_prompt=char.visual_prompt,
@@ -354,12 +354,12 @@ def generate_image(
             seed=char.seed,
         )
     except RuntimeError as e:
-        # Daca generarea esueaza, refundam creditele
-        utils.add_credits(user, cost, "Refund - eroare la generare imagine", db, transaction_type="refund")
+        # If generation fails, refund credits
+        utils.add_credits(user, cost, "Refund - image generation failed", db, transaction_type="refund")
         db.commit()
-        raise HTTPException(500, f"Generarea imaginii a esuat: {str(e)}")
+        raise HTTPException(500, f"Image generation failed: {str(e)}")
 
-    # Salvam in galerie
+    # Save to gallery
     img_record = models.ImageGeneration(
         user_id=user.id,
         character_id=char.id,
@@ -370,7 +370,7 @@ def generate_image(
     )
     db.add(img_record)
 
-    # Salvam ca mesaj in conversatie
+    # Save as message in conversation
     db.add(models.Message(
         character_id=char.id,
         sender="ai",
@@ -397,7 +397,7 @@ def generate_image(
 # HISTORY
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/chat/history/{char_id}", summary="Istoricul conversatiei")
+@app.get("/chat/history/{char_id}", summary="Conversation history")
 def get_history(
     char_id: str,
     limit: int = 50,
@@ -429,10 +429,10 @@ def get_history(
 
 
 # ═══════════════════════════════════════════════════════════
-# GALERIE
+# GALLERY
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/images/gallery", summary="Galeria imaginilor generate")
+@app.get("/images/gallery", summary="Generated images gallery")
 def get_gallery(
     limit: int = 20,
     db: Session = Depends(database.get_db),
@@ -459,7 +459,7 @@ def get_gallery(
     ]
 
 
-@app.patch("/images/{image_id}/like", summary="Like / unlike imagine")
+@app.patch("/images/{image_id}/like", summary="Like / unlike image")
 def toggle_like(
     image_id: str,
     db: Session = Depends(database.get_db),
@@ -470,17 +470,17 @@ def toggle_like(
         models.ImageGeneration.user_id == user.id,
     ).first()
     if not img:
-        raise HTTPException(404, "Imaginea nu a fost gasita.")
+        raise HTTPException(404, "Image not found.")
     img.liked = not img.liked
     db.commit()
     return {"liked": img.liked}
 
 
 # ═══════════════════════════════════════════════════════════
-# CREDITE & STRIPE
+# CREDITS & STRIPE
 # ═══════════════════════════════════════════════════════════
 
-@app.get("/credits/packages", summary="Pachete disponibile")
+@app.get("/credits/packages", summary="Available packages")
 def get_packages(db: Session = Depends(database.get_db)):
     pkgs = db.query(models.CreditPackage).filter(models.CreditPackage.is_active == True).all()
     return [
@@ -497,7 +497,7 @@ def get_packages(db: Session = Depends(database.get_db)):
     ]
 
 
-@app.post("/credits/checkout", summary="Creeaza sesiune Stripe Checkout")
+@app.post("/credits/checkout", summary="Create Stripe Checkout session")
 def create_checkout(
     body: StripeCheckoutRequest,
     db: Session = Depends(database.get_db),
@@ -508,18 +508,18 @@ def create_checkout(
         models.CreditPackage.is_active == True,
     ).first()
     if not pkg:
-        raise HTTPException(404, "Pachetul nu a fost gasit.")
+        raise HTTPException(404, "Package not found.")
 
     if not stripe.api_key:
-        raise HTTPException(500, "Stripe nu este configurat. Adauga STRIPE_SECRET_KEY in .env")
+        raise HTTPException(500, "Stripe is not configured. Add STRIPE_SECRET_KEY to .env")
 
     try:
-        # Daca pachetul are stripe_price_id setat, folosim Price din Stripe Dashboard
-        # Altfel cream un price dinamic
+        # If package has stripe_price_id set, use Price from Stripe Dashboard
+        # Otherwise create a dynamic price
         if pkg.stripe_price_id:
             line_items = [{"price": pkg.stripe_price_id, "quantity": 1}]
         else:
-            # Price dinamic - nu necesita configurare in Stripe Dashboard
+            # Dynamic price - no Stripe Dashboard configuration needed
             line_items = [{
                 "price_data": {
                     "currency": "usd",
@@ -563,7 +563,7 @@ def create_checkout(
         raise HTTPException(400, error_msg)
 
 
-@app.post("/credits/webhook", summary="Stripe webhook - procesare plati")
+@app.post("/credits/webhook", summary="Stripe webhook - process payments")
 async def stripe_webhook(request: Request):
     """
     Stripe trimite un POST aici dupa fiecare plata.
@@ -606,7 +606,7 @@ async def stripe_webhook(request: Request):
                     utils.add_credits(
                         user=user,
                         amount=credits,
-                        description=f"Achizitie pachet {package_id} ({credits} credits)",
+                        description=f"Package purchase {package_id} ({credits} credits)",
                         db=db,
                         transaction_type="purchase",
                         stripe_payment_id=stripe_payment_id,
@@ -622,7 +622,7 @@ async def stripe_webhook(request: Request):
     return {"status": "ok"}
 
 
-@app.get("/credits/transactions", summary="Istoricul tranzactiilor")
+@app.get("/credits/transactions", summary="Transaction history")
 def get_transactions(
     limit: int = 20,
     db: Session = Depends(database.get_db),

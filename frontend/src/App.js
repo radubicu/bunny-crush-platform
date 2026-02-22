@@ -296,6 +296,13 @@ function App() {
         />
       )}
 
+      {showCreatingLoader && (
+        <CreatingLoader onDone={() => {
+          setShowCreatingLoader(false);
+          setShowPaywall(true);
+        }} />
+      )}
+
       {showPaywall && (
         <PaywallScreen
           characterName={paywallCharName || pendingCharData?.name}
