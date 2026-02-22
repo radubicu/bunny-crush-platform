@@ -8,6 +8,16 @@ const EYE_OPTIONS = ['blue', 'green', 'brown', 'hazel', 'gray', 'dark'];
 const BODY_OPTIONS = ['petite', 'athletic', 'curvy', 'slim', 'tall & lean'];
 const STYLE_OPTIONS = ['casual', 'elegant', 'sporty', 'edgy', 'glamorous'];
 
+const OPTION_IMAGES = {
+  'black straight': '/IMG_8090.jpeg',
+  'auburn waves': '/IMG_8092.jpeg',
+  'long blonde': '/IMG_8094.jpeg',
+  'petite': '/IMG_8108.jpeg',
+  'curvy': '/IMG_8103.jpeg',
+  'slim': '/IMG_8106.jpeg',
+  'athletic': '/IMG_8107.jpeg',
+};
+
 function CharacterCreator({ onCreated, onClose, guestMode = false }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -145,7 +155,10 @@ function CharacterCreator({ onCreated, onClose, guestMode = false }) {
               <label>Hair</label>
               <div className="options-grid">
                 {HAIR_OPTIONS.map(o => (
-                  <button key={o} className={`opt-btn ${hair === o ? 'selected' : ''}`} onClick={() => setHair(o)}>{o}</button>
+                  <button key={o} className={`opt-btn ${OPTION_IMAGES[o] ? 'has-img' : ''} ${hair === o ? 'selected' : ''}`} onClick={() => setHair(o)}>
+                    {OPTION_IMAGES[o] && <img src={OPTION_IMAGES[o]} alt={o} className="opt-img" />}
+                    <span className="opt-label">{o}</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -163,7 +176,10 @@ function CharacterCreator({ onCreated, onClose, guestMode = false }) {
               <label>Body type</label>
               <div className="options-grid cols-5">
                 {BODY_OPTIONS.map(o => (
-                  <button key={o} className={`opt-btn ${body === o ? 'selected' : ''}`} onClick={() => setBody(o)}>{o}</button>
+                  <button key={o} className={`opt-btn ${OPTION_IMAGES[o] ? 'has-img' : ''} ${body === o ? 'selected' : ''}`} onClick={() => setBody(o)}>
+                    {OPTION_IMAGES[o] && <img src={OPTION_IMAGES[o]} alt={o} className="opt-img" />}
+                    <span className="opt-label">{o}</span>
+                  </button>
                 ))}
               </div>
             </div>
